@@ -6,7 +6,7 @@
 | # | Object | Type | ใครสร้าง | Status |
 |---|---|---|---|---|
 | 1 | `YPOC_CLEARING` | Package | ผู้ใช้ (ADT) | ⬜ ยังไม่สร้าง |
-| 2 | `ZOS_CLEARING_SOAP` | Outbound Service (HTTP) | ผู้ใช้ (ADT) | 🔜 ทำต่อจากนี้ |
+| 2 | `ZOS_CLEARING_SOAP_REST` | Outbound Service (HTTP) | ผู้ใช้ (ADT) | 🔜 ทำต่อจากนี้ |
 | 3 | `ZCS_CLEARING` | Communication Scenario | ผู้ใช้ (ADT) | 🔜 ทำต่อจากนี้ |
 | 4 | `YCL_CLEARING_RUNNER` | Class (console, `IF_OO_ADT_CLASSRUN`) | ผู้ใช้ copy จาก chat | 🟡 activate + รัน dry-run ผ่านแล้ว ยังไม่ push |
 

@@ -89,7 +89,7 @@ CLASS ycl_clearing_runner DEFINITION
 
     "--- destination (ดู docs/02-communication-setup.md) ---
     CONSTANTS gc_comm_scenario TYPE char30 VALUE 'ZCS_CLEARING'.
-    CONSTANTS gc_service_id    TYPE char40 VALUE 'ZOS_CLEARING_SOAP'.
+    CONSTANTS gc_service_id    TYPE char40 VALUE 'ZOS_CLEARING_SOAP_REST'.
     CONSTANTS gc_soap_action   TYPE string
       VALUE 'http://sap.com/xi/SAPSCORE/SFIN/JournalEntryBulkClearingRequest_In/JournalEntryBulkClearingRequest_InRequest'.
 

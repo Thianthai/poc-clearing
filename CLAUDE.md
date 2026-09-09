@@ -20,7 +20,7 @@ POC เรียก SOAP API `JournalEntryBulkClearingRequest_In`
 | Package | `YPOC_CLEARING` |
 | Console class | `YCL_CLEARING_RUNNER` |
 | Communication scenario | `ZCS_CLEARING` |
-| Outbound service | `ZOS_CLEARING_SOAP` |
+| Outbound service | `ZOS_CLEARING_SOAP_REST` |
 
 > **ข้อยกเว้น namespace** — global rule ให้ขึ้นต้น `Y` ทุก object แต่ user สั่ง
 > case by case (2026-09-09) ว่า **outbound service ใช้ `ZOS_*` และ
@@ -50,5 +50,9 @@ prefix ตัวแปรตาม global rules (`gc_` / `lv_` / `lo_` / `ls_` /
   ไม่งั้น service ตอบ error — เทียบเท่ากับติ๊ก WS-A ใน SoapUI
 - Message header `ID` ต้อง **unique และไม่เกิน 35 ตัวอักษร**
 - ยิงซ้ำด้วย `ID` เดิม จะโดนมองเป็น duplicate message
+- ADT เติม suffix **`_REST`** ให้ outbound service แบบ HTTP อัตโนมัติ
+  → ชื่อจริงคือ `ZOS_CLEARING_SOAP_REST` ไม่ใช่ `ZOS_CLEARING_SOAP`
+  `gc_service_id` ต้องตรงกับชื่อจริง ไม่งั้น `CX_HTTP_DEST_PROVIDER_ERROR`
+- Outbound service ตั้ง **HTTP Version = 1.1** (ADT default ให้มา 1.0)
 - `create_by_comm_arrangement( )` รับ parameter เป็น fixed-length char ไม่ใช่ string
   → `gc_comm_scenario` ต้องเป็น `char30` และ `gc_service_id` ต้องเป็น `char40`

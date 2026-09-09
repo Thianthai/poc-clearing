@@ -17,7 +17,7 @@ C1 Communication User ──┐
                                   └────────────────────┘
                                      ยิงกลับเข้าตัวเอง
 
-ADT: ZOS_CLEARING_SOAP (outbound service) + ZCS_CLEARING (comm scenario)
+ADT: ZOS_CLEARING_SOAP_REST (outbound service) + ZCS_CLEARING (comm scenario)
      ต้องสร้าง + publish ก่อนถึงจะเห็น scenario ตอนทำ C4
 ```
 
@@ -127,12 +127,19 @@ Cloud Communication Management → **Outbound Service**
 
 | ช่อง | ค่า |
 |---|---|
-| Name | `ZOS_CLEARING_SOAP` |
+| Name | `ZOS_CLEARING_SOAP` → ADT เติม `_REST` ให้เอง เป็น **`ZOS_CLEARING_SOAP_REST`** |
 | Description | Journal Entry Bulk Clearing (SOAP inbound) |
 | Service Type | **HTTP** |
 | Default Path Prefix | `/sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques` |
 
+ในส่วน **REST Service Settings** → เปลี่ยน **HTTP Version** เป็น **HTTP 1.1**
+(default ที่ ADT ให้มาคือ 1.0 ซึ่งไม่รองรับ persistent connection / chunked transfer)
+
 > **ตัด `?sap-client=100` ออก** เอาเฉพาะ path — query string ใส่ตรงนี้ไม่ได้
+
+> **ADT เติม suffix `_REST` ให้อัตโนมัติ** ตอนสร้าง outbound service แบบ HTTP
+> ชื่อที่พิมพ์ `ZOS_CLEARING_SOAP` จะกลายเป็น `ZOS_CLEARING_SOAP_REST`
+> → `gc_service_id` ใน class ต้องใช้ชื่อที่มี `_REST` ต่อท้าย
 
 ### Communication Scenario
 
@@ -146,7 +153,7 @@ ADT → New → **Communication Scenario**
 | Allowed Instances | *One instance per scenario & communication system* |
 
 - Scope Dependent → **ไม่ต้องติ๊ก**
-- แท็บ **Outbound** → Add → `ZOS_CLEARING_SOAP`
+- แท็บ **Outbound** → Add → `ZOS_CLEARING_SOAP_REST`
 - Supported Authentication Methods → ติ๊ก **User Name and Password**
 - Save → **Activate** → **Publish Locally**
 
@@ -165,7 +172,7 @@ Fiori app **Communication Arrangements** → New
 | Outbound Communication → User Name | `ABAP_DEV` |
 | Outbound Communication → Password | password จาก C1 |
 
-ในส่วน **Outbound Services** → `ZOS_CLEARING_SOAP`
+ในส่วน **Outbound Services** → `ZOS_CLEARING_SOAP_REST`
 
 - ติ๊ก active
 - Path ต้องเป็น `/sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques`
@@ -181,7 +188,7 @@ console class เรียก
 ```abap
 cl_http_destination_provider=>create_by_comm_arrangement(
   comm_scenario = 'ZCS_CLEARING'
-  service_id    = 'ZOS_CLEARING_SOAP' )
+  service_id    = 'ZOS_CLEARING_SOAP_REST' )
 ```
 
 ถ้า throw `CX_HTTP_DEST_PROVIDER_ERROR` = C4 ยังไม่ถูกสร้าง หรือชื่อ
@@ -196,7 +203,7 @@ scenario / service ไม่ตรง
 - [ ] C3 `SAP_COM_0002` เปิด inbound service Clearing แล้ว และ **Save พ้น Draft**
 - [ ] Outbound confirmation service 3 ตัวใน `SAP_COM_0002` uncheck Active แล้ว
 - [ ] ยิงผ่าน SOAPUI/Postman ได้ HTTP 202
-- [ ] `ZOS_CLEARING_SOAP` + `ZCS_CLEARING` activate + publish locally แล้ว
+- [ ] `ZOS_CLEARING_SOAP_REST` + `ZCS_CLEARING` activate + publish locally แล้ว
 - [ ] C4 arrangement สร้างแล้ว outbound service active
 - [ ] Business user มีสิทธิ์เปิด Fiori app **Message Dashboard**
 - [ ] Posting period ของ company code `1000` เปิดอยู่สำหรับวันที่ที่จะ post
