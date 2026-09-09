@@ -11,13 +11,13 @@ C1 Communication User ──┐
                         │         │ inbound            │ outbound
                         │         ▼                    ▼
                         └──▶ C3 Arrangement       C4 Arrangement
-                             SAP_COM_0002           YCS_CLEARING
+                             SAP_COM_0002           ZCS_CLEARING
                              (เปิดรับ clearing)     (ให้ ABAP ยิงออก)
                                   ▲                    │
                                   └────────────────────┘
                                      ยิงกลับเข้าตัวเอง
 
-ADT: YOS_CLEARING_SOAP (outbound service) + YCS_CLEARING (comm scenario)
+ADT: ZOS_CLEARING_SOAP (outbound service) + ZCS_CLEARING (comm scenario)
      ต้องสร้าง + publish ก่อนถึงจะเห็น scenario ตอนทำ C4
 ```
 
@@ -100,7 +100,7 @@ fail ค้างในคิวทุกครั้งที่ยิง → *
 ถ้าอยากลองรับ confirmation จริง ๆ ค่อยเปิดทีหลังตอน POC หลักผ่านแล้ว
 
 > ส่วน Outbound ของ `SAP_COM_0002` **ไม่ใช่** ตัวที่ console class ใช้
-> ตัวที่ใช้คือ arrangement `YCS_CLEARING` ใน C4 คนละอันกัน
+> ตัวที่ใช้คือ arrangement `ZCS_CLEARING` ใน C4 คนละอันกัน
 
 ### ทดสอบก่อนไปต่อ (แนะนำมาก)
 
@@ -127,7 +127,7 @@ Cloud Communication Management → **Outbound Service**
 
 | ช่อง | ค่า |
 |---|---|
-| Name | `YOS_CLEARING_SOAP` |
+| Name | `ZOS_CLEARING_SOAP` |
 | Description | Journal Entry Bulk Clearing (SOAP inbound) |
 | Service Type | **HTTP** |
 | Default Path Prefix | `/sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques` |
@@ -140,11 +140,13 @@ ADT → New → **Communication Scenario**
 
 | ช่อง | ค่า |
 |---|---|
-| Name | `YCS_CLEARING` |
+| Name | `ZCS_CLEARING` |
+| Communication Scenario Type | `Customer` |
 | Description | POC Journal Entry Clearing |
-| Allowed Instances | Multiple |
+| Allowed Instances | *One instance per scenario & communication system* |
 
-- แท็บ **Outbound** → Add → `YOS_CLEARING_SOAP`
+- Scope Dependent → **ไม่ต้องติ๊ก**
+- แท็บ **Outbound** → Add → `ZOS_CLEARING_SOAP`
 - Supported Authentication Methods → ติ๊ก **User Name and Password**
 - Save → **Activate** → **Publish Locally**
 
@@ -152,18 +154,18 @@ ADT → New → **Communication Scenario**
 
 ---
 
-## C4 — Communication Arrangement `YCS_CLEARING` (outbound)
+## C4 — Communication Arrangement `ZCS_CLEARING` (outbound)
 
 Fiori app **Communication Arrangements** → New
 
 | ช่อง | ค่า |
 |---|---|
-| Scenario | `YCS_CLEARING` |
+| Scenario | `ZCS_CLEARING` |
 | Communication System | `ABAP_DEV` |
 | Outbound Communication → User Name | `ABAP_DEV` |
 | Outbound Communication → Password | password จาก C1 |
 
-ในส่วน **Outbound Services** → `YOS_CLEARING_SOAP`
+ในส่วน **Outbound Services** → `ZOS_CLEARING_SOAP`
 
 - ติ๊ก active
 - Path ต้องเป็น `/sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques`
@@ -178,8 +180,8 @@ console class เรียก
 
 ```abap
 cl_http_destination_provider=>create_by_comm_arrangement(
-  comm_scenario = 'YCS_CLEARING'
-  service_id    = 'YOS_CLEARING_SOAP' )
+  comm_scenario = 'ZCS_CLEARING'
+  service_id    = 'ZOS_CLEARING_SOAP' )
 ```
 
 ถ้า throw `CX_HTTP_DEST_PROVIDER_ERROR` = C4 ยังไม่ถูกสร้าง หรือชื่อ
@@ -194,7 +196,7 @@ scenario / service ไม่ตรง
 - [ ] C3 `SAP_COM_0002` เปิด inbound service Clearing แล้ว และ **Save พ้น Draft**
 - [ ] Outbound confirmation service 3 ตัวใน `SAP_COM_0002` uncheck Active แล้ว
 - [ ] ยิงผ่าน SOAPUI/Postman ได้ HTTP 202
-- [ ] `YOS_CLEARING_SOAP` + `YCS_CLEARING` activate + publish locally แล้ว
+- [ ] `ZOS_CLEARING_SOAP` + `ZCS_CLEARING` activate + publish locally แล้ว
 - [ ] C4 arrangement สร้างแล้ว outbound service active
 - [ ] Business user มีสิทธิ์เปิด Fiori app **Message Dashboard**
 - [ ] Posting period ของ company code `1000` เปิดอยู่สำหรับวันที่ที่จะ post
@@ -209,7 +211,7 @@ scenario / service ไม่ตรง
 
 | อาการ | สาเหตุ |
 |---|---|
-| ไม่เห็น `YCS_CLEARING` ตอนสร้าง arrangement | ยังไม่ได้ *Publish Locally* ที่ comm scenario |
+| ไม่เห็น `ZCS_CLEARING` ตอนสร้าง arrangement | ยังไม่ได้ *Publish Locally* ที่ comm scenario |
 | ไม่เห็น *Journal Entry – Clearing* ใน `SAP_COM_0002` | scope item ยังไม่ activate — คุยกับ functional |
 | HTTP 401 | password ใน outbound ของ C2/C4 ไม่ตรงกับ C1 |
 | HTTP 404 | path มี `?sap-client=` ติดมา หรือสะกด service ผิด |

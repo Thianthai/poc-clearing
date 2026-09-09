@@ -19,8 +19,13 @@ POC เรียก SOAP API `JournalEntryBulkClearingRequest_In`
 |---|---|
 | Package | `YPOC_CLEARING` |
 | Console class | `YCL_CLEARING_RUNNER` |
-| Communication scenario | `YCS_CLEARING` |
-| Outbound service | `YOS_CLEARING_SOAP` |
+| Communication scenario | `ZCS_CLEARING` |
+| Outbound service | `ZOS_CLEARING_SOAP` |
+
+> **ข้อยกเว้น namespace** — global rule ให้ขึ้นต้น `Y` ทุก object แต่ user สั่ง
+> case by case (2026-09-09) ว่า **outbound service ใช้ `ZOS_*` และ
+> communication scenario ใช้ `ZCS_*`** สอง object นี้เท่านั้น
+> ที่เหลือ (package, class) ยังเป็น `Y` ตามเดิม
 
 prefix ตัวแปรตาม global rules (`gc_` / `lv_` / `lo_` / `ls_` / `lt_` / `iv_` / `rv_` …)
 

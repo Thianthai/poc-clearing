@@ -24,7 +24,7 @@ POC นี้จึงทำตัวเป็น external client: ประก�
 YCL_CLEARING_RUNNER  ──POST──▶  https://<host>-api.s4hana.cloud.sap
  (console class)                /sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques
         │                                        │
-        │ comm arrangement YCS_CLEARING          ▼
+        │ comm arrangement ZCS_CLEARING          ▼
         └──────────────────────────────▶  AIF / Message Dashboard (ดูผลลัพธ์)
 ```
 
