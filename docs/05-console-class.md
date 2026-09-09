@@ -4,13 +4,14 @@
 > ผู้ใช้เป็นคน copy code นี้ไปสร้างใน ADT แล้ว push ผ่าน abapGit เอง
 > ถ้าแก้บน tenant แล้ว ให้บอก Claude มาอัปเดตหน้านี้ตาม
 
-## สถานะ: draft — รอ test data จาก functional
+## สถานะ: มี test data จริงแล้ว (AR full clearing)
 
-`get_apar_items( )` และ `get_gl_items( )` ยัง comment ไว้ทั้งคู่ เพราะ ณ 2026-09-09
-ยังไม่มี open item ที่หักล้างกันพอดีบน tenant (ดู [06](06-data-export-sql.md))
+`get_apar_items( )` เติมข้อมูลจริงแล้ว (invoice 9400000005 กับ payment 3300000017
+ของลูกค้า 0001000082 ยอด 6,418.93 THB หักล้างกันพอดี — ดู [04](04-test-data.md))
+`get_gl_items( )` ต้องว่าง เพราะเคสนี้เป็น AR
 
-class ตั้ง `gc_dry_run = abap_true` ไว้ → รันได้เลยตั้งแต่ตอนนี้ จะเห็น payload
-ที่ประกอบเสร็จโดยยังไม่ยิงออกไป และยังไม่ต้องมี communication arrangement
+class ยังตั้ง `gc_dry_run = abap_true` ไว้ → รันดู payload ได้โดยไม่ยิงจริง
+พร้อมยิงเมื่อไหร่ค่อยเปลี่ยนเป็น `abap_false`
 
 ## วิธีใช้
 
@@ -319,25 +320,24 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
   METHOD get_apar_items.
 
     "==========================================================
-    " เคส AP / AR — รอ test data จาก functional
-    " เงื่อนไข: ทุกบรรทัดต้องเป็น open item จริง ยอดรวม (signed) = 0
-    "           และ SpecialGLCode ต้องว่าง (API ไม่รองรับ special G/L)
+    " Test case จาก functional (2026-09-09) — เคส AR full clearing
+    "   SO JA30000116 > billing JA70000046
+    "   invoice 9400000005/2026 item 001 : +6,418.93  (PK 01)
+    "   payment 3300000017/2026 item 005 : -6,418.93  (PK 15)
+    "   customer 0001000082 · THB · รวมกัน = 0.00 พอดี
+    " ระวัง: เอกสารเลขเดียวกันมีใน FY2025 ด้วย ต้องระบุ fiscal_year เสมอ
     "==========================================================
-*    rt_items = VALUE #(
-*      company_code = gc_company_code
-*      account_type = 'K'
-*      ( ref_doc_item   = 1
-*        apar_account   = 'CHANGE_ME_VENDOR'
-*        fiscal_year    = 'CHANGE_ME_YEAR'
-*        acctg_doc      = 'CHANGE_ME_DOC1'
-*        acctg_doc_item = '1' )
-*      ( ref_doc_item   = 2
-*        apar_account   = 'CHANGE_ME_VENDOR'
-*        fiscal_year    = 'CHANGE_ME_YEAR'
-*        acctg_doc      = 'CHANGE_ME_DOC2'
-*        acctg_doc_item = '1' ) ).
-
-    "ปล่อยว่างไว้ = ไม่มี item ฝั่งนี้ (uncomment block ข้างบนแล้วเติมค่าจริง)
+    rt_items = VALUE #(
+      company_code = gc_company_code
+      account_type = 'D'
+      apar_account = '0001000082'
+      fiscal_year  = '2026'
+      ( ref_doc_item   = 1
+        acctg_doc      = '9400000005'
+        acctg_doc_item = '001' )
+      ( ref_doc_item   = 2
+        acctg_doc      = '3300000017'
+        acctg_doc_item = '005' ) ).
 
   ENDMETHOD.
 
@@ -361,7 +361,7 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
 *        acctg_doc      = 'CHANGE_ME_DOC2'
 *        acctg_doc_item = '1' ) ).
 
-    "ปล่อยว่างไว้ = ไม่มี item ฝั่งนี้ (uncomment block ข้างบนแล้วเติมค่าจริง)
+    "เคสปัจจุบันเป็น AR → ฝั่ง G/L ต้องว่าง ห้าม uncomment block ข้างบน
 
   ENDMETHOD.
 

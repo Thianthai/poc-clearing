@@ -89,3 +89,41 @@ K / S10300901 / 2026 / 1500000241 / 2
 
 ตอนทดสอบครั้งแรกให้ใส่**ตามที่ view คืนมา** (`001`) ก่อน ถ้า Message Dashboard
 ฟ้องว่าหา item ไม่เจอ ค่อยลองตัด leading zero ออก
+
+---
+
+## 7. Test case จริง (functional ส่งให้ 2026-09-09)
+
+เคส **AR full clearing** — chain เอกสาร
+
+```
+Sales order       JA30000116
+Billing document  JA70000046
+FI invoice        9400000005   FY2026
+Payment document  3300000017   FY2026
+```
+
+### บรรทัดที่ส่งเข้า API (เฉพาะ FinancialAccountType = 'D')
+
+| # | เอกสาร | FY | Item | PK | Customer | Amount (THB) | Cleared |
+|---|---|---|---|---|---|---:|---|
+| 1 | `9400000005` | 2026 | `001` | 01 | `0001000082` | +6,418.93 | ว่าง |
+| 2 | `3300000017` | 2026 | `005` | 15 | `0001000082` | −6,418.93 | ว่าง |
+
+รวม = **0.00** → full clearing ได้
+
+### บรรทัดที่ **ไม่** ส่ง
+
+บรรทัด `FinancialAccountType = 'S'` ทั้งหมด (bank `0011092001`, revenue
+`0021060006`, tax `0021082005` / `0021082003`, ค่าธรรมเนียม `0011047003`)
+API สร้าง offsetting ให้เอง
+
+### กับดักที่เจอตอนดึงข้อมูล
+
+- **เลขเอกสารซ้ำข้ามปี** — `9400000005` และ `3300000017` มีทั้ง FY2025 และ FY2026
+  ถ้า query ไม่กรอง `FiscalYear` จะได้เอกสารคนละใบปนมา และ FY2025 นั้น
+  invoice ถูก clear ไปแล้ว (`ClearingAccountingDocument = 3300000003`)
+  → **ต้องระบุ `fiscal_year` ใน payload เสมอ**
+- ค่าที่ใส่ใน payload ใช้ตามที่ view คืนมาตรง ๆ: customer `0001000082`
+  (มี leading zero), item `001` / `005` (NUMC 3 หลัก)
+  ถ้า API ฟ้องหา item ไม่เจอ ค่อยลองตัด leading zero
