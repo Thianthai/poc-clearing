@@ -1,43 +1,111 @@
-# 02 — Communication Setup
+# 02 — Communication Setup (C1–C4)
 
 console class ยิง SOAP ไปที่ **inbound service ของ tenant ตัวเอง** จึงต้อง config
-สองฝั่ง คือ ฝั่ง **inbound** (ให้ service เปิดรับ) และฝั่ง **outbound**
-(ให้ ABAP มี destination + credential ยิงออก)
+สองฝั่ง: **inbound** (ให้ service เปิดรับ) และ **outbound** (ให้ ABAP มี destination
++ credential ยิงออก) โดยใช้ communication system ตัวเดียวกันทำทั้งสองหน้าที่
 
 ```
-ADT (dev)                          Fiori (config)                tenant runtime
-─────────                          ──────────────                ──────────────
-YOS_CLEARING_SOAP  ─┐
- (outbound service) │
-                    ├─▶ Communication Arrangement  ─▶  destination + basic auth
-YCS_CLEARING       ─┘        (YCS_CLEARING)                      │
- (comm scenario)                                                 ▼
-                    Communication Arrangement SAP_COM_0002  ─▶  /sap/bc/srt/scs_ext/sap/
-                     (inbound, เปิดรับ clearing)                journalentrybulkclearingreques
+C1 Communication User ──┐
+                        ├──▶ C2 Communication System (ชี้ host ตัวเอง)
+                        │         │                    │
+                        │         │ inbound            │ outbound
+                        │         ▼                    ▼
+                        └──▶ C3 Arrangement       C4 Arrangement
+                             SAP_COM_0002           YCS_CLEARING
+                             (เปิดรับ clearing)     (ให้ ABAP ยิงออก)
+                                  ▲                    │
+                                  └────────────────────┘
+                                     ยิงกลับเข้าตัวเอง
+
+ADT: YOS_CLEARING_SOAP (outbound service) + YCS_CLEARING (comm scenario)
+     ต้องสร้าง + publish ก่อนถึงจะเห็น scenario ตอนทำ C4
 ```
 
-## ส่วนที่ 1 — เปิด inbound service (SAP_COM_0002)
+**ลำดับที่ต้องทำ**: C1 → C2 → C3 → (ADT objects) → C4
 
-1. Fiori app **Communication Systems** → สร้าง communication system
-   (host = ตัวเอง, inbound user = communication user)
-2. Fiori app **Communication Users** → สร้าง user + password
-   จดไว้ ใช้ทั้ง inbound และ outbound
-3. Fiori app **Communication Arrangements** → New →
-   scenario **SAP_COM_0002 (Finance – Posting Integration)**
-4. ในแท็บ *Inbound Services* ต้องเห็น
-   **Journal Entry – Clearing (Asynchronous)** และติ๊ก active
-5. copy **Service URL** ที่แสดงในหน้านั้นไว้ หน้าตาประมาณ
+---
+
+## C1 — Communication User
+
+Fiori app **Maintain Communication Users**
+
+| ช่อง | ค่า |
+|---|---|
+| User Name | `YPOC_CLEARING` |
+| Description | POC Journal Entry Clearing |
+| Password | กด *Propose Password* แล้ว **copy เก็บไว้** |
+
+> password แสดงครั้งเดียว ถ้าหายต้อง reset ใหม่
+> user นี้ใช้ทั้งขา inbound และ outbound เพราะยิงกลับเข้า tenant ตัวเอง
+
+---
+
+## C2 — Communication System
+
+Fiori app **Communication Systems** → New
+
+| ช่อง | ค่า |
+|---|---|
+| System ID | `YPOC_SELF` |
+| System Name | POC Self Call |
+| **Host Name** | `myXXXXXX-api.s4hana.cloud.sap` ← host **-api** ของ tenant ตัวเอง |
+| Port | `443` |
+
+จากนั้นเพิ่ม user ทั้งสองฝั่ง
+
+- **Users for Inbound Communication** → เพิ่ม `YPOC_CLEARING`
+  · Authentication Method: *User Name and Password*
+- **Users for Outbound Communication** → เพิ่ม `YPOC_CLEARING` + password จาก C1
+  · Authentication Method: *User Name and Password*
+
+Save → ตรวจว่าสถานะเป็น active
+
+> **host ต้องเป็นตัว `-api`** ไม่ใช่ host ที่ใช้เปิด Fiori launchpad
+> (launchpad = `my######.s4hana.cloud.sap` · API = `my######-api.s4hana.cloud.sap`)
+
+---
+
+## C3 — Communication Arrangement `SAP_COM_0002` (inbound)
+
+Fiori app **Communication Arrangements** → New
+
+| ช่อง | ค่า |
+|---|---|
+| Scenario | `SAP_COM_0002` — Finance: Posting Integration |
+| Arrangement Name | ปล่อยตามที่ระบบเสนอ |
+| Communication System | `YPOC_SELF` |
+| Inbound Communication → User Name | `YPOC_CLEARING` |
+
+ในส่วน **Inbound Services** ต้องเห็น **Journal Entry – Clearing (Asynchronous)**
+และติ๊ก active
+
+**copy Service URL เก็บไว้** หน้าตาประมาณ
 
 ```
-https://myXXXXXX-api.s4hana.cloud.sap/sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques
+https://myXXXXXX-api.s4hana.cloud.sap/sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques?sap-client=100
 ```
 
-> ทดสอบด้วย SOAPUI/Postman ก่อนเขียน ABAP จะ debug ง่ายกว่ามาก
-> ใน SOAPUI ต้องติ๊ก **WS-A addressing** + **Generate MessageID**
+Save
 
-## ส่วนที่ 2 — สร้าง destination สำหรับยิงออก (ทำใน ADT)
+### ทดสอบก่อนไปต่อ (แนะนำมาก)
 
-### 2.1 Outbound Service
+ยิงด้วย SOAPUI / Postman โดยใช้ payload ก้อนที่ dry-run พิมพ์ออกมา
+
+- Method `POST` · URL = Service URL ข้างบน
+- Auth: Basic — `YPOC_CLEARING` + password
+- Header `Content-Type: text/xml; charset=utf-8`
+- Header `SOAPAction:` ค่าเดียวกับ `gc_soap_action`
+- SOAPUI ต้องติ๊ก **WS-A addressing** + **Generate MessageID**
+  (Postman ไม่มีให้ติ๊ก แต่ payload ของเรามี `wsa:` header ฝังมาแล้ว)
+
+ได้ **HTTP 202** = inbound พร้อม → ผ่านด่านนี้แล้วปัญหาที่เหลือจะอยู่ฝั่ง
+outbound destination อย่างเดียว แยกปัญหาได้ชัด
+
+---
+
+## ADT objects (ทำก่อน C4)
+
+### Outbound Service
 
 ADT → package `YPOC_CLEARING` → New → Other ABAP Repository Object →
 Cloud Communication Management → **Outbound Service**
@@ -49,7 +117,9 @@ Cloud Communication Management → **Outbound Service**
 | Service Type | **HTTP** |
 | Default Path Prefix | `/sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques` |
 
-### 2.2 Communication Scenario
+> **ตัด `?sap-client=100` ออก** เอาเฉพาะ path — query string ใส่ตรงนี้ไม่ได้
+
+### Communication Scenario
 
 ADT → New → **Communication Scenario**
 
@@ -59,25 +129,35 @@ ADT → New → **Communication Scenario**
 | Description | POC Journal Entry Clearing |
 | Allowed Instances | Multiple |
 
-แท็บ *Outbound* → เพิ่ม `YOS_CLEARING_SOAP`
-→ Supported Authentication Methods: **User Name and Password**
+- แท็บ **Outbound** → Add → `YOS_CLEARING_SOAP`
+- Supported Authentication Methods → ติ๊ก **User Name and Password**
+- Save → **Activate** → **Publish Locally**
 
-publish scenario แล้ว activate
+> ถ้าไม่ publish จะไม่เห็น scenario นี้ตอนสร้าง arrangement ใน C4
 
-### 2.3 Communication Arrangement (Fiori)
+---
 
-Fiori app **Communication Arrangements** → New →
-scenario `YCS_CLEARING`
+## C4 — Communication Arrangement `YCS_CLEARING` (outbound)
+
+Fiori app **Communication Arrangements** → New
 
 | ช่อง | ค่า |
 |---|---|
-| Communication System | ตัว tenant เอง (host `myXXXXXX-api.s4hana.cloud.sap`, port 443) |
-| Outbound user | communication user จากข้อ 1.2 |
-| Outbound Service `YOS_CLEARING_SOAP` | ติ๊ก active, path ตามข้อ 2.1 |
+| Scenario | `YCS_CLEARING` |
+| Communication System | `YPOC_SELF` |
+| Outbound Communication → User Name | `YPOC_CLEARING` |
+| Outbound Communication → Password | password จาก C1 |
 
-> **credential อยู่ที่นี่ที่เดียว** ห้ามย้ายไป hardcode ใน ABAP
+ในส่วน **Outbound Services** → `YOS_CLEARING_SOAP`
 
-## ส่วนที่ 3 — ตรวจว่า ABAP หา destination เจอ
+- ติ๊ก active
+- Path ต้องเป็น `/sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques`
+
+Save
+
+---
+
+## ตรวจว่า ABAP หา destination เจอ
 
 console class เรียก
 
@@ -87,22 +167,34 @@ cl_http_destination_provider=>create_by_comm_arrangement(
   service_id    = 'YOS_CLEARING_SOAP' )
 ```
 
-ถ้า throw `CX_HTTP_DEST_PROVIDER_ERROR` แปลว่า comm arrangement ยังไม่ถูกสร้าง
-หรือชื่อ scenario/service ไม่ตรง
+ถ้า throw `CX_HTTP_DEST_PROVIDER_ERROR` = C4 ยังไม่ถูกสร้าง หรือชื่อ
+scenario / service ไม่ตรง
 
-## ทางเลือกที่ **ไม่แนะนำ**
+---
+
+## Checklist
+
+- [ ] C1 comm user สร้างแล้ว จด password ไว้
+- [ ] C2 comm system ชี้ host `-api` ของตัวเอง มี user ทั้ง inbound + outbound
+- [ ] C3 `SAP_COM_0002` เปิด inbound service Clearing แล้ว
+- [ ] ยิงผ่าน SOAPUI/Postman ได้ HTTP 202
+- [ ] `YOS_CLEARING_SOAP` + `YCS_CLEARING` activate + publish locally แล้ว
+- [ ] C4 arrangement สร้างแล้ว outbound service active
+- [ ] Business user มีสิทธิ์เปิด Fiori app **Message Dashboard**
+- [ ] Posting period ของ company code `1000` เปิดอยู่สำหรับวันที่ที่จะ post
+
+## ทางเลือกที่ **ไม่ใช้** ใน repo นี้
 
 `cl_http_destination_provider=>create_by_url( )` + `set_authorization_basic( )`
-ทำงานได้และเซ็ตเร็วกว่า แต่ต้องเอา user/password ใส่ไว้ใน source code
-→ ห้ามใช้ใน repo นี้
+เซ็ตเร็วกว่ามาก ข้าม C2/C4 ได้เลย แต่ต้องเอา user/password ใส่ไว้ใน source code
+→ ห้ามใช้
 
-## Checklist ก่อนรัน
+## Troubleshooting
 
-- [ ] Communication user สร้างแล้ว รู้ password
-- [ ] SAP_COM_0002 arrangement เปิด inbound service Clearing แล้ว
-- [ ] ยิงผ่าน SOAPUI/Postman สำเร็จ (ได้ HTTP 202)
-- [ ] `YOS_CLEARING_SOAP` + `YCS_CLEARING` activate + publish แล้ว
-- [ ] `YCS_CLEARING` arrangement สร้างแล้ว ชี้ host ตัวเอง
-- [ ] Business user มีสิทธิ์ดู Fiori app **Message Dashboard**
-- [ ] Posting period ของ company code เปิดอยู่
-- [ ] มี open item จริงที่ยังไม่ถูก clear (ดู `docs/04-test-data.md`)
+| อาการ | สาเหตุ |
+|---|---|
+| ไม่เห็น `YCS_CLEARING` ตอนสร้าง arrangement | ยังไม่ได้ *Publish Locally* ที่ comm scenario |
+| ไม่เห็น *Journal Entry – Clearing* ใน `SAP_COM_0002` | scope item ยังไม่ activate — คุยกับ functional |
+| HTTP 401 | password ใน outbound ของ C2/C4 ไม่ตรงกับ C1 |
+| HTTP 404 | path มี `?sap-client=` ติดมา หรือสะกด service ผิด |
+| `CX_HTTP_DEST_PROVIDER_ERROR` | C4 ยังไม่มี หรือชื่อไม่ตรงกับ constant ใน class |
