@@ -102,6 +102,8 @@ CLASS ycl_clearing DEFINITION
     CONSTANTS gc_header_text   TYPE string VALUE 'POC Clearing via SOAP'.
     CONSTANTS gc_reference_doc TYPE string VALUE 'POC-CLEAR'.
     CONSTANTS gc_created_by    TYPE string VALUE 'POC_USER'.
+    "! G/L Deferred Output Tax — ต้อง clear คู่ไปกับฝั่ง AR เสมอ
+    CONSTANTS gc_gl_deferred_tax TYPE string VALUE '0021082005'.
 
     METHODS get_apar_items
       RETURNING VALUE(rt_items) TYPE tt_apar_item.
@@ -361,15 +363,16 @@ CLASS ycl_clearing IMPLEMENTATION.
     " invoice 9400000005/2026 item 001 : +6,418.93  (PK 01)
     " payment 3300000017/2026 item 005 : -6,418.93  (PK 15)
     " customer 0001000082 - THB - รวมกัน = 0.00 พอดี
+    " ReferenceDocumentItem ต่อจาก GLItems (1-2) จึงเริ่มที่ 3
     rt_items = VALUE #(
       company_code = gc_company_code
       account_type = 'D'
       apar_account = '0001000082'
       fiscal_year  = '2026'
-      ( ref_doc_item   = 1
+      ( ref_doc_item   = 3
         acctg_doc      = '9400000005'
         acctg_doc_item = '001' )
-      ( ref_doc_item   = 2
+      ( ref_doc_item   = 4
         acctg_doc      = '3300000017'
         acctg_doc_item = '005' ) ).
 
@@ -378,20 +381,21 @@ CLASS ycl_clearing IMPLEMENTATION.
 
   METHOD get_gl_items.
 
-    " Test case: G/L
-    " บัญชีต้อง IsOpenItemManaged = 'X'
-*    rt_items = VALUE #(
-*      company_code = gc_company_code
-*      ( ref_doc_item   = 1
-*        gl_account     = 'CHANGE_ME_GLACCT'
-*        fiscal_year    = 'CHANGE_ME_YEAR'
-*        acctg_doc      = 'CHANGE_ME_DOC1'
-*        acctg_doc_item = '1' )
-*      ( ref_doc_item   = 2
-*        gl_account     = 'CHANGE_ME_GLACCT'
-*        fiscal_year    = 'CHANGE_ME_YEAR'
-*        acctg_doc      = 'CHANGE_ME_DOC2'
-*        acctg_doc_item = '1' ) ).
+    " Deferred Output Tax — functional ยืนยันว่าต้อง clear คู่กับฝั่ง AR
+    "   invoice 9400000005/2026 item 003 : -419.93
+    "   payment 3300000017/2026 item 003 : +419.93
+    "   G/L 0021082005 - IsOpenItemManaged = 'X' - รวมกัน = 0.00 พอดี
+    " GLItems ถูก emit ก่อน APARItems จึงใช้ ReferenceDocumentItem 1-2
+    rt_items = VALUE #(
+      company_code = gc_company_code
+      gl_account   = gc_gl_deferred_tax
+      fiscal_year  = '2026'
+      ( ref_doc_item   = 1
+        acctg_doc      = '9400000005'
+        acctg_doc_item = '003' )
+      ( ref_doc_item   = 2
+        acctg_doc      = '3300000017'
+        acctg_doc_item = '003' ) ).
 
   ENDMETHOD.
 

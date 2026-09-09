@@ -49,7 +49,9 @@ payload หรือมาจาก destination
 | 2026-09-09 | ยิงจริงครั้งที่ 2 (**client 100** + `comm_system_id`) | ✅ **HTTP 202 Accepted** |
 | 2026-09-09 | ยิงครั้งที่ 3 (**client 100** ไม่ส่ง `comm_system_id`) | ✅ 202 → พิสูจน์ว่าสาเหตุคือ **client** ไม่ใช่ `comm_system_id` |
 | 2026-09-09 | Message Dashboard ว่างเปล่าทั้งเดือน | ⚠️ user ไม่ถูก assign AIF recipient — ไม่ใช่ว่า message ไม่เข้า |
-| 2026-09-09 10:00 UTC | **ยิง post จริง** (`TestDataIndicator = false`) | ✅ **POC สำเร็จ** — ทั้ง 2 บรรทัดถูก clear ด้วยเอกสาร `0100000000` วันที่ 2026-09-09 |
+| 2026-09-09 10:00 UTC | **ยิง post จริง** (`TestDataIndicator = false`) | ✅ clear สำเร็จ เอกสาร `0100000000` — แต่**ยังไม่ครบ** |
+| 2026-09-09 | functional ตรวจ clearing doc | ⚠️ ขาดบรรทัด **Deferred Output Tax** (G/L `0021082005`) ต้อง clear คู่ไปด้วย |
+| 2026-09-09 | เพิ่ม `get_gl_items( )` = G/L `0021082005` ทั้ง 2 ใบ | 🔜 ต้อง **reverse `0100000000`** ก่อน แล้วยิงใหม่ให้ครบ 4 บรรทัด |
 
 ### ยังพิสูจน์ไม่ได้ (รออะไรอยู่)
 

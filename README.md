@@ -32,7 +32,7 @@ YCL_CLEARING  ──POST──▶  https://<host>-api.s4hana.cloud.sap
 body ว่าง ไม่ได้แปลว่า clear สำเร็จ ต้องไปดูผลจริงที่ Message Dashboard
 ด้วย Message ID ที่ console พิมพ์ออกมา
 
-## ผลลัพธ์ POC — ✅ สำเร็จ (2026-09-09)
+## ผลลัพธ์ POC — 🟡 ยิงผ่านแล้ว กำลังแก้ scope ของ clearing (2026-09-09)
 
 ยิง SOAP API จาก ABAP Cloud console class แล้ว **clear เอกสารได้จริง**
 
@@ -43,7 +43,11 @@ body ว่าง ไม่ได้แปลว่า clear สำเร็จ 
 | Payment | `3300000017` / 2026 / item 005 · −6,418.93 |
 | **Clearing document** | **`0100000000`** ลงวันที่ 2026-09-09 |
 
-บรรทัด G/L (bank / revenue / tax) ไม่ต้องส่งเข้า API — ระบบสร้าง offsetting ให้เอง
+> ⚠️ functional ตรวจแล้วพบว่า **ยังไม่ครบ** — ต้อง clear บรรทัด
+> **Deferred Output Tax** (G/L `0021082005` item 003 ของทั้งสองใบ) คู่ไปด้วย
+> ขั้นตอนถัดไป: reverse `0100000000` แล้วยิงใหม่ให้ครบทั้ง 4 บรรทัด
+
+บรรทัด G/L ที่เหลือ (bank / revenue) ไม่ต้องส่งเข้า API — ระบบสร้าง offsetting ให้เอง
 
 ### สิ่งที่พิสูจน์ได้
 
