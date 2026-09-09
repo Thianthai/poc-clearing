@@ -206,6 +206,45 @@ SELECT FinancialAccountType,
 
 ---
 
+## Q11 — open item ที่เพิ่ง post ล่าสุด (ใช้หา data ที่ functional เพิ่งเตรียมให้)
+
+เรียงจากเอกสารใหม่สุด ครอบคลุมทั้ง K / D / S ในทีเดียว
+
+```abap
+SELECT FinancialAccountType,
+       GLAccount,
+       Supplier,
+       Customer,
+       TransactionCurrency,
+       AmountInTransactionCurrency,
+       FiscalYear,
+       AccountingDocument,
+       AccountingDocumentItem,
+       PostingKey,
+       DebitCreditCode,
+       PostingDate,
+       DocumentDate,
+       AccountingDocumentType,
+       AssignmentReference,
+       DocumentItemText,
+       SpecialGLCode,
+       IsOpenItemManaged
+  FROM I_OperationalAcctgDocItem
+  WHERE CompanyCode                = '1000'
+    AND ClearingAccountingDocument = ''
+    AND SpecialGLCode              = ''
+    AND IsOpenItemManaged          = 'X'
+  ORDER BY PostingDate DESCENDING, AccountingDocument DESCENDING,
+           AccountingDocumentItem
+  INTO TABLE @DATA(lt_latest)
+  UP TO 60 ROWS.
+```
+
+ถ้ารู้วันที่ที่ functional post ให้เติม `AND PostingDate >= '20260901'` เข้าไป
+จะแคบลงเยอะ
+
+---
+
 ## Q2 — ดึงบรรทัดจริงหลังเลือกได้แล้ว
 
 เปลี่ยน filter ตามเคสที่เลือก (G/L ใช้ `FinancialAccountType = 'S'` + `GLAccount`)
