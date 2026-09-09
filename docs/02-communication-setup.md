@@ -170,6 +170,7 @@ Fiori app **Communication Arrangements** → New
 
 | ช่อง | ค่า |
 |---|---|
+| Arrangement Name | `SPORTPACKAGE_CLEARING_API` |
 | Scenario | `ZCS_SPORTPACKAGE_CLEARING` |
 | Communication System | `ABAP_DEV` |
 | Outbound Communication → User Name | `ABAP_DEV` |
@@ -180,7 +181,12 @@ Fiori app **Communication Arrangements** → New
 - ติ๊ก active
 - Path ต้องเป็น `/sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques`
 
-Save
+Save — จากนั้นกด **Check Connection** ที่ outbound service
+ได้ *"The ping of the outbound service was successful"* = host + credential + path ถูกหมด
+
+> **Authentication Method** ในหน้านี้เป็น derived field — ระบบเอาค่าจาก
+> communication system / communication user มาให้เอง ไม่ต้องเลือกเอง
+> ที่เห็นเป็นตัวเทาคือปกติ
 
 ---
 
