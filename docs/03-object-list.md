@@ -41,3 +41,12 @@ payload หรือมาจาก destination
 | วันที่ | ทำอะไร | ผล |
 |---|---|---|
 | 2026-09-09 | activate `YCL_CLEARING_RUNNER` แล้วรัน dry-run โดยยังไม่มี item | ✅ UUID + guard + dry-run ทำงานถูก ไม่ยิงออกไป |
+| 2026-09-09 | dry-run ด้วย GLItems 2 บรรทัด (ค่า placeholder) | ✅ payload ตรงกับตัวอย่าง SAP ทุก element — **payload builder ปิดจ๊อบ** |
+
+### ยังพิสูจน์ไม่ได้ (รออะไรอยู่)
+
+| หัวข้อ | รอ |
+|---|---|
+| destination + auth | config C1–C4 |
+| endpoint / SOAPAction ถูกไหม | ยิงจริงครั้งแรก |
+| business logic ของ clearing | test data จาก functional |

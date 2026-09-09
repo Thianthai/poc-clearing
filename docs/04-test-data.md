@@ -81,3 +81,11 @@ K / S10300901 / 2026 / 1500000241 / 2
 - อย่าใช้ item ที่มี **Special G/L indicator** — API นี้ไม่รองรับ
   (ดู [01-api-reference.md](01-api-reference.md#ข้อจำกัดที่ต้องรู้ก่อนออกแบบ))
 - แต่ละครั้งที่รัน class จะ generate Message ID ใหม่ให้เอง ไม่ชนกัน
+
+## 6. รูปแบบเลขบรรทัด (`AccountingDocumentItem`)
+
+`I_OperationalAcctgDocItem` คืนค่ามาเป็น 3 หลักมี leading zero (`001`, `002`)
+แต่ payload ตัวอย่างของ SAP ใช้ `1`, `2`
+
+ตอนทดสอบครั้งแรกให้ใส่**ตามที่ view คืนมา** (`001`) ก่อน ถ้า Message Dashboard
+ฟ้องว่าหา item ไม่เจอ ค่อยลองตัด leading zero ออก
