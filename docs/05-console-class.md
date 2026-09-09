@@ -337,7 +337,7 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
 *        acctg_doc      = 'CHANGE_ME_DOC2'
 *        acctg_doc_item = '1' ) ).
 
-    CLEAR rt_items.
+    "ปล่อยว่างไว้ = ไม่มี item ฝั่งนี้ (uncomment block ข้างบนแล้วเติมค่าจริง)
 
   ENDMETHOD.
 
@@ -361,7 +361,7 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
 *        acctg_doc      = 'CHANGE_ME_DOC2'
 *        acctg_doc_item = '1' ) ).
 
-    CLEAR rt_items.
+    "ปล่อยว่างไว้ = ไม่มี item ฝั่งนี้ (uncomment block ข้างบนแล้วเติมค่าจริง)
 
   ENDMETHOD.
 
