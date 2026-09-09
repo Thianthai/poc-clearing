@@ -45,8 +45,9 @@ payload หรือมาจาก destination
 | 2026-09-09 | ได้ test data จริงจาก functional (AR: invoice 9400000005 + payment 3300000017) | ✅ ตรวจแล้วยอดหักล้างกันพอดี ยังไม่ถูก clear เติมลง `get_apar_items( )` แล้ว |
 | 2026-09-09 | dry-run ด้วย data จริง | ✅ payload ครบถูกต้อง — `APARItems` 2 ก้อน, `AccountType D`, FY2026, item 001/005 · **ฝั่ง ABAP พร้อมยิง** |
 | 2026-09-09 | config C1–C4 ครบ + **Check Connection ผ่าน** | ✅ host + credential + path ถูกต้อง — พร้อมยิงจริง |
-| 2026-09-09 | ยิงจริงครั้งที่ 1 | ❌ `CX_HTTP_DEST_PROVIDER_ERROR` — ไม่ได้ส่ง `comm_system_id` |
-| 2026-09-09 | ยิงจริงครั้งที่ 2 (ใส่ `comm_system_id`) | ✅ **HTTP 202 Accepted** — destination + auth + endpoint + WS-A ผ่านหมด |
+| 2026-09-09 | ยิงจริงครั้งที่ 1 (**client 80**) | ❌ `CX_HTTP_DEST_PROVIDER_ERROR` |
+| 2026-09-09 | ยิงจริงครั้งที่ 2 (**client 100** + `comm_system_id`) | ✅ **HTTP 202 Accepted** |
+| 2026-09-09 | ยิงครั้งที่ 3 (**client 100** ไม่ส่ง `comm_system_id`) | ✅ 202 → พิสูจน์ว่าสาเหตุคือ **client** ไม่ใช่ `comm_system_id` |
 
 ### ยังพิสูจน์ไม่ได้ (รออะไรอยู่)
 

@@ -91,7 +91,6 @@ CLASS ycl_clearing_runner DEFINITION
     CONSTANTS gc_comm_scenario TYPE char30 VALUE 'ZCS_SPORTPACKAGE_CLEARING'.
     "! ต้องตรงกับคอลัมน์ Outbound Service ID ใน ADT เป๊ะ (ADT เติม _REST ให้เอง)
     CONSTANTS gc_service_id    TYPE char40 VALUE 'ZAPI_SPORTPACKAGE_CLEARING_REST'.
-    CONSTANTS gc_comm_system   TYPE c LENGTH 60 VALUE 'ABAP_DEV'.
     CONSTANTS gc_soap_action   TYPE string
       VALUE 'http://sap.com/xi/SAPSCORE/SFIN/JournalEntryBulkClearingRequest_In/JournalEntryBulkClearingRequest_InRequest'.
 
@@ -184,13 +183,11 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
 
     io_out->write( |Scenario    : { gc_comm_scenario }| ).
     io_out->write( |Service ID  : { gc_service_id }| ).
-    io_out->write( |Comm system : { gc_comm_system }| ).
 
     TRY.
         DATA(lo_destination) = cl_http_destination_provider=>create_by_comm_arrangement(
-                                 comm_scenario  = gc_comm_scenario
-                                 service_id     = gc_service_id
-                                 comm_system_id = gc_comm_system ).
+                                 comm_scenario = gc_comm_scenario
+                                 service_id    = gc_service_id ).
 
         DATA(lo_client) = cl_web_http_client_manager=>create_by_http_destination( lo_destination ).
 
@@ -218,8 +215,9 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
 
       CATCH cx_http_dest_provider_error INTO DATA(lx_dest).
         io_out->write( |ERROR (destination): { lx_dest->get_text( ) }| ).
-        io_out->write( `หา comm arrangement ไม่เจอ — เช็คว่า gc_service_id ตรงกับ` ).
-        io_out->write( `คอลัมน์ Outbound Service ID ใน ADT > comm scenario > tab Outbound` ).
+        io_out->write( `หา comm arrangement ไม่เจอ — เช็ค 2 อย่าง` ).
+        io_out->write( `1) รันอยู่ client เดียวกับที่สร้าง arrangement ไหม (arrangement ผูกกับ client)` ).
+        io_out->write( `2) gc_service_id ตรงกับคอลัมน์ Outbound Service ID ใน ADT ไหม` ).
 
       CATCH cx_web_http_client_error
             cx_web_message_error INTO DATA(lx_error).
