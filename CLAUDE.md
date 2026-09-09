@@ -45,3 +45,5 @@ prefix ตัวแปรตาม global rules (`gc_` / `lv_` / `lo_` / `ls_` /
   ไม่งั้น service ตอบ error — เทียบเท่ากับติ๊ก WS-A ใน SoapUI
 - Message header `ID` ต้อง **unique และไม่เกิน 35 ตัวอักษร**
 - ยิงซ้ำด้วย `ID` เดิม จะโดนมองเป็น duplicate message
+- `create_by_comm_arrangement( )` รับ parameter เป็น fixed-length char ไม่ใช่ string
+  → `gc_comm_scenario` ต้องเป็น `char30` และ `gc_service_id` ต้องเป็น `char40`

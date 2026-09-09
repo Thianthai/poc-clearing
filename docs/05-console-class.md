@@ -87,8 +87,8 @@ CLASS ycl_clearing_runner DEFINITION
       tt_gl_item TYPE STANDARD TABLE OF ty_gl_item WITH EMPTY KEY.
 
     "--- destination (ดู docs/02-communication-setup.md) ---
-    CONSTANTS gc_comm_scenario TYPE string VALUE 'YCS_CLEARING'.
-    CONSTANTS gc_service_id    TYPE string VALUE 'YOS_CLEARING_SOAP'.
+    CONSTANTS gc_comm_scenario TYPE char30 VALUE 'YCS_CLEARING'.
+    CONSTANTS gc_service_id    TYPE char40 VALUE 'YOS_CLEARING_SOAP'.
     CONSTANTS gc_soap_action   TYPE string
       VALUE 'http://sap.com/xi/SAPSCORE/SFIN/JournalEntryBulkClearingRequest_In/JournalEntryBulkClearingRequest_InRequest'.
 
