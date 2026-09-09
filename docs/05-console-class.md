@@ -40,7 +40,7 @@ class ยังตั้ง `gc_dry_run = abap_true` ไว้ → รันด�
 | 2 | เช็คว่ามี item ให้ clear ไหม ถ้าไม่มีก็หยุด |
 | 3 | ประกอบ SOAP envelope เป็น string — WS-A header + payload |
 | 4 | ถ้า dry run → พิมพ์แล้วจบ |
-| 5 | ขอ destination จาก comm arrangement `ZCS_CLEARING` แล้ว POST |
+| 5 | ขอ destination จาก comm arrangement `ZCS_SPORTPACKAGE_CLEARING` แล้ว POST |
 | 6 | พิมพ์ HTTP status / body ออก console |
 
 รองรับครบทั้ง full / partial / residual clearing ผ่าน field ใน `ty_apar_item`
@@ -88,8 +88,8 @@ CLASS ycl_clearing_runner DEFINITION
       tt_gl_item TYPE STANDARD TABLE OF ty_gl_item WITH EMPTY KEY.
 
     "--- destination (ดู docs/02-communication-setup.md) ---
-    CONSTANTS gc_comm_scenario TYPE char30 VALUE 'ZCS_CLEARING'.
-    CONSTANTS gc_service_id    TYPE char40 VALUE 'ZOS_CLEARING_SOAP_REST'.
+    CONSTANTS gc_comm_scenario TYPE char30 VALUE 'ZCS_SPORTPACKAGE_CLEARING'.
+    CONSTANTS gc_service_id    TYPE char40 VALUE 'ZAPI_SPORTPACKAGE_CLEARING_REST'.
     CONSTANTS gc_soap_action   TYPE string
       VALUE 'http://sap.com/xi/SAPSCORE/SFIN/JournalEntryBulkClearingRequest_In/JournalEntryBulkClearingRequest_InRequest'.
 
@@ -385,7 +385,7 @@ ENDCLASS.
 
 | อาการ | สาเหตุที่เจอบ่อย |
 |---|---|
-| `CX_HTTP_DEST_PROVIDER_ERROR` | comm arrangement `ZCS_CLEARING` ยังไม่สร้าง หรือชื่อ scenario/service ไม่ตรง |
+| `CX_HTTP_DEST_PROVIDER_ERROR` | comm arrangement `ZCS_SPORTPACKAGE_CLEARING` ยังไม่สร้าง หรือชื่อ scenario/service ไม่ตรง |
 | HTTP 401 | communication user / password ใน arrangement ผิด |
 | HTTP 404 | path ใน outbound service ผิด — ต้องเป็น `/sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques` |
 | HTTP 500 + SOAP fault `WS-Addressing` | header `wsa:Action` / `wsa:MessageID` หาย หรือ `SOAPAction` ไม่ตรง — ลองใส่ `"` ครอบค่า SOAPAction ดู |

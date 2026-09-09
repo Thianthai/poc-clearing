@@ -11,13 +11,13 @@ C1 Communication User ──┐
                         │         │ inbound            │ outbound
                         │         ▼                    ▼
                         └──▶ C3 Arrangement       C4 Arrangement
-                             SAP_COM_0002           ZCS_CLEARING
+                             SAP_COM_0002           ZCS_SPORTPACKAGE_CLEARING
                              (เปิดรับ clearing)     (ให้ ABAP ยิงออก)
                                   ▲                    │
                                   └────────────────────┘
                                      ยิงกลับเข้าตัวเอง
 
-ADT: ZOS_CLEARING_SOAP_REST (outbound service) + ZCS_CLEARING (comm scenario)
+ADT: ZAPI_SPORTPACKAGE_CLEARING_REST (outbound service) + ZCS_SPORTPACKAGE_CLEARING (comm scenario)
      ต้องสร้าง + publish ก่อนถึงจะเห็น scenario ตอนทำ C4
 ```
 
@@ -100,7 +100,7 @@ fail ค้างในคิวทุกครั้งที่ยิง → *
 ถ้าอยากลองรับ confirmation จริง ๆ ค่อยเปิดทีหลังตอน POC หลักผ่านแล้ว
 
 > ส่วน Outbound ของ `SAP_COM_0002` **ไม่ใช่** ตัวที่ console class ใช้
-> ตัวที่ใช้คือ arrangement `ZCS_CLEARING` ใน C4 คนละอันกัน
+> ตัวที่ใช้คือ arrangement `ZCS_SPORTPACKAGE_CLEARING` ใน C4 คนละอันกัน
 
 ### ทดสอบก่อนไปต่อ (แนะนำมาก)
 
@@ -127,7 +127,7 @@ Cloud Communication Management → **Outbound Service**
 
 | ช่อง | ค่า |
 |---|---|
-| Name | `ZOS_CLEARING_SOAP` → ADT เติม `_REST` ให้เอง เป็น **`ZOS_CLEARING_SOAP_REST`** |
+| Name | พิมพ์ `ZAPI_SPORTPACKAGE_CLEARING` → ADT เติม `_REST` ให้เอง กลายเป็น **`ZAPI_SPORTPACKAGE_CLEARING_REST`** (31 ตัวอักษร) |
 | Description | Journal Entry Bulk Clearing (SOAP inbound) |
 | Service Type | **HTTP** |
 | Default Path Prefix | `/sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques` |
@@ -138,8 +138,11 @@ Cloud Communication Management → **Outbound Service**
 > **ตัด `?sap-client=100` ออก** เอาเฉพาะ path — query string ใส่ตรงนี้ไม่ได้
 
 > **ADT เติม suffix `_REST` ให้อัตโนมัติ** ตอนสร้าง outbound service แบบ HTTP
-> ชื่อที่พิมพ์ `ZOS_CLEARING_SOAP` จะกลายเป็น `ZOS_CLEARING_SOAP_REST`
+> ชื่อที่พิมพ์ `ZAPI_SPORTPACKAGE_CLEARING` จะกลายเป็น `ZAPI_SPORTPACKAGE_CLEARING_REST`
 > → `gc_service_id` ใน class ต้องใช้ชื่อที่มี `_REST` ต่อท้าย
+>
+> ชื่อเต็มยาว **31 ตัวอักษร** ถ้า ADT ไม่ยอมเพราะเกินลิมิต 30 ต้องย่อชื่อที่พิมพ์
+> ให้สั้นลง 1 ตัว (เช่น `ZAPI_SPORTPKG_CLEARING`) แล้วแก้ constant ตาม
 
 ### Communication Scenario
 
@@ -147,13 +150,13 @@ ADT → New → **Communication Scenario**
 
 | ช่อง | ค่า |
 |---|---|
-| Name | `ZCS_CLEARING` |
+| Name | `ZCS_SPORTPACKAGE_CLEARING` |
 | Communication Scenario Type | `Customer` |
 | Description | POC Journal Entry Clearing |
 | Allowed Instances | *One instance per scenario & communication system* |
 
 - Scope Dependent → **ไม่ต้องติ๊ก**
-- แท็บ **Outbound** → Add → `ZOS_CLEARING_SOAP_REST`
+- แท็บ **Outbound** → Add → `ZAPI_SPORTPACKAGE_CLEARING_REST`
 - Supported Authentication Methods → ติ๊ก **User Name and Password**
 - Save → **Activate** → **Publish Locally**
 
@@ -161,18 +164,18 @@ ADT → New → **Communication Scenario**
 
 ---
 
-## C4 — Communication Arrangement `ZCS_CLEARING` (outbound)
+## C4 — Communication Arrangement `ZCS_SPORTPACKAGE_CLEARING` (outbound)
 
 Fiori app **Communication Arrangements** → New
 
 | ช่อง | ค่า |
 |---|---|
-| Scenario | `ZCS_CLEARING` |
+| Scenario | `ZCS_SPORTPACKAGE_CLEARING` |
 | Communication System | `ABAP_DEV` |
 | Outbound Communication → User Name | `ABAP_DEV` |
 | Outbound Communication → Password | password จาก C1 |
 
-ในส่วน **Outbound Services** → `ZOS_CLEARING_SOAP_REST`
+ในส่วน **Outbound Services** → `ZAPI_SPORTPACKAGE_CLEARING_REST`
 
 - ติ๊ก active
 - Path ต้องเป็น `/sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques`
@@ -187,8 +190,8 @@ console class เรียก
 
 ```abap
 cl_http_destination_provider=>create_by_comm_arrangement(
-  comm_scenario = 'ZCS_CLEARING'
-  service_id    = 'ZOS_CLEARING_SOAP_REST' )
+  comm_scenario = 'ZCS_SPORTPACKAGE_CLEARING'
+  service_id    = 'ZAPI_SPORTPACKAGE_CLEARING_REST' )
 ```
 
 ถ้า throw `CX_HTTP_DEST_PROVIDER_ERROR` = C4 ยังไม่ถูกสร้าง หรือชื่อ
@@ -203,7 +206,7 @@ scenario / service ไม่ตรง
 - [ ] C3 `SAP_COM_0002` เปิด inbound service Clearing แล้ว และ **Save พ้น Draft**
 - [ ] Outbound confirmation service 3 ตัวใน `SAP_COM_0002` uncheck Active แล้ว
 - [ ] ยิงผ่าน SOAPUI/Postman ได้ HTTP 202
-- [ ] `ZOS_CLEARING_SOAP_REST` + `ZCS_CLEARING` activate + publish locally แล้ว
+- [ ] `ZAPI_SPORTPACKAGE_CLEARING_REST` + `ZCS_SPORTPACKAGE_CLEARING` activate + publish locally แล้ว
 - [ ] C4 arrangement สร้างแล้ว outbound service active
 - [ ] Business user มีสิทธิ์เปิด Fiori app **Message Dashboard**
 - [ ] Posting period ของ company code `1000` เปิดอยู่สำหรับวันที่ที่จะ post
@@ -218,7 +221,7 @@ scenario / service ไม่ตรง
 
 | อาการ | สาเหตุ |
 |---|---|
-| ไม่เห็น `ZCS_CLEARING` ตอนสร้าง arrangement | ยังไม่ได้ *Publish Locally* ที่ comm scenario |
+| ไม่เห็น `ZCS_SPORTPACKAGE_CLEARING` ตอนสร้าง arrangement | ยังไม่ได้ *Publish Locally* ที่ comm scenario |
 | ไม่เห็น *Journal Entry – Clearing* ใน `SAP_COM_0002` | scope item ยังไม่ activate — คุยกับ functional |
 | HTTP 401 | password ใน outbound ของ C2/C4 ไม่ตรงกับ C1 |
 | HTTP 404 | path มี `?sap-client=` ติดมา หรือสะกด service ผิด |

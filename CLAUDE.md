@@ -19,13 +19,19 @@ POC เรียก SOAP API `JournalEntryBulkClearingRequest_In`
 |---|---|
 | Package | `YPOC_CLEARING` |
 | Console class | `YCL_CLEARING_RUNNER` |
-| Communication scenario | `ZCS_CLEARING` |
-| Outbound service | `ZOS_CLEARING_SOAP_REST` |
+| Communication scenario | `ZCS_SPORTPACKAGE_CLEARING` |
+| Outbound service | `ZAPI_SPORTPACKAGE_CLEARING_REST` |
 
 > **ข้อยกเว้น namespace** — global rule ให้ขึ้นต้น `Y` ทุก object แต่ user สั่ง
-> case by case (2026-09-09) ว่า **outbound service ใช้ `ZOS_*` และ
-> communication scenario ใช้ `ZCS_*`** สอง object นี้เท่านั้น
-> ที่เหลือ (package, class) ยังเป็น `Y` ตามเดิม
+> case by case (2026-09-09) ว่า **communication scenario ใช้ `ZCS_*` และ
+> outbound service ใช้ `ZAPI_*`**
+>
+> เหตุผล: สอง object นี้จะถูก **reassign package ไปใช้งานจริงต่อหลังจบ POC**
+> ไม่ได้ถูกทิ้งไปพร้อม POC เหมือน object อื่น จึงตั้งชื่อตามระบบงานจริง
+> (`SPORTPACKAGE`) ตั้งแต่แรก
+>
+> ที่เหลือ (package `YPOC_CLEARING`, class `YCL_CLEARING_RUNNER`) ยังเป็น `Y`
+> ตามเดิม เพราะเป็นของ POC ล้วน
 
 prefix ตัวแปรตาม global rules (`gc_` / `lv_` / `lo_` / `ls_` / `lt_` / `iv_` / `rv_` …)
 
@@ -51,7 +57,7 @@ prefix ตัวแปรตาม global rules (`gc_` / `lv_` / `lo_` / `ls_` /
 - Message header `ID` ต้อง **unique และไม่เกิน 35 ตัวอักษร**
 - ยิงซ้ำด้วย `ID` เดิม จะโดนมองเป็น duplicate message
 - ADT เติม suffix **`_REST`** ให้ outbound service แบบ HTTP อัตโนมัติ
-  → ชื่อจริงคือ `ZOS_CLEARING_SOAP_REST` ไม่ใช่ `ZOS_CLEARING_SOAP`
+  → ชื่อจริงคือ `ZAPI_SPORTPACKAGE_CLEARING_REST` ไม่ใช่ `ZAPI_SPORTPACKAGE_CLEARING`
   `gc_service_id` ต้องตรงกับชื่อจริง ไม่งั้น `CX_HTTP_DEST_PROVIDER_ERROR`
 - Outbound service ตั้ง **HTTP Version = 1.1** (ADT default ให้มา 1.0)
 - `create_by_comm_arrangement( )` รับ parameter เป็น fixed-length char ไม่ใช่ string
