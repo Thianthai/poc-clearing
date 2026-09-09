@@ -60,5 +60,9 @@ prefix ตัวแปรตาม global rules (`gc_` / `lv_` / `lo_` / `ls_` /
   → ชื่อจริงคือ `ZAPI_SPORTPACKAGE_CLEARING_REST` ไม่ใช่ `ZAPI_SPORTPACKAGE_CLEARING`
   `gc_service_id` ต้องตรงกับชื่อจริง ไม่งั้น `CX_HTTP_DEST_PROVIDER_ERROR`
 - Outbound service ตั้ง **HTTP Version = 1.1** (ADT default ให้มา 1.0)
+- `ERROR: The selection did not return any results.` จาก
+  `CX_HTTP_DEST_PROVIDER_ERROR` = หา comm arrangement ไม่เจอ
+  **ยังไม่ได้ยิงออกไปเลย** ไม่ใช่ปัญหา payload — เช็ค `gc_service_id`
+  ให้ตรงกับคอลัมน์ *Outbound Service ID* ใน ADT > comm scenario > tab Outbound
 - `create_by_comm_arrangement( )` รับ parameter เป็น fixed-length char ไม่ใช่ string
   → `gc_comm_scenario` ต้องเป็น `char30` และ `gc_service_id` ต้องเป็น `char40`

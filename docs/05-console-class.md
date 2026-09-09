@@ -89,7 +89,9 @@ CLASS ycl_clearing_runner DEFINITION
 
     "--- destination (ดู docs/02-communication-setup.md) ---
     CONSTANTS gc_comm_scenario TYPE char30 VALUE 'ZCS_SPORTPACKAGE_CLEARING'.
+    "! ต้องตรงกับคอลัมน์ Outbound Service ID ใน ADT เป๊ะ (ADT เติม _REST ให้เอง)
     CONSTANTS gc_service_id    TYPE char40 VALUE 'ZAPI_SPORTPACKAGE_CLEARING_REST'.
+    CONSTANTS gc_comm_system   TYPE char30 VALUE 'ABAP_DEV'.
     CONSTANTS gc_soap_action   TYPE string
       VALUE 'http://sap.com/xi/SAPSCORE/SFIN/JournalEntryBulkClearingRequest_In/JournalEntryBulkClearingRequest_InRequest'.
 
@@ -180,10 +182,15 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
 
   METHOD send_request.
 
+    io_out->write( |Scenario    : { gc_comm_scenario }| ).
+    io_out->write( |Service ID  : { gc_service_id }| ).
+    io_out->write( |Comm system : { gc_comm_system }| ).
+
     TRY.
         DATA(lo_destination) = cl_http_destination_provider=>create_by_comm_arrangement(
-                                 comm_scenario = gc_comm_scenario
-                                 service_id    = gc_service_id ).
+                                 comm_scenario  = gc_comm_scenario
+                                 service_id     = gc_service_id
+                                 comm_system_id = gc_comm_system ).
 
         DATA(lo_client) = cl_web_http_client_manager=>create_by_http_destination( lo_destination ).
 
@@ -209,10 +216,14 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
           io_out->write( `ยิงไม่ผ่าน — body ข้างบนคือ SOAP fault` ).
         ENDIF.
 
-      CATCH cx_http_dest_provider_error
-            cx_web_http_client_error
+      CATCH cx_http_dest_provider_error INTO DATA(lx_dest).
+        io_out->write( |ERROR (destination): { lx_dest->get_text( ) }| ).
+        io_out->write( `หา comm arrangement ไม่เจอ — เช็คว่า gc_service_id ตรงกับ` ).
+        io_out->write( `คอลัมน์ Outbound Service ID ใน ADT > comm scenario > tab Outbound` ).
+
+      CATCH cx_web_http_client_error
             cx_web_message_error INTO DATA(lx_error).
-        io_out->write( |ERROR: { lx_error->get_text( ) }| ).
+        io_out->write( |ERROR (http): { lx_error->get_text( ) }| ).
     ENDTRY.
 
   ENDMETHOD.
