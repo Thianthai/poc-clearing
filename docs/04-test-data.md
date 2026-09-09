@@ -48,6 +48,9 @@
 
 หาได้จาก Fiori app **Manage G/L Account Line Items** (กรอง Open Items)
 
+> **ทางลัด**: query สำเร็จรูปสำหรับดึงข้อมูลพวกนี้อยู่ที่
+> [06-data-export-sql.md](06-data-export-sql.md) — เร็วกว่าไล่กดใน Fiori
+
 ## 3. รูปแบบที่สะดวกที่สุดสำหรับส่งข้อมูลมา
 
 ส่งมาเป็นตารางแบบนี้ก็พอ:

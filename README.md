@@ -41,6 +41,7 @@ body ว่าง ไม่ได้แปลว่า clear สำเร็จ 
 | [docs/03-object-list.md](docs/03-object-list.md) | รายการ ABAP object + สถานะ |
 | [docs/04-test-data.md](docs/04-test-data.md) | ช่องข้อมูลที่ต้อง export จากระบบมาเติม |
 | [docs/05-console-class.md](docs/05-console-class.md) | snapshot source code ของ console class |
+| [docs/06-data-export-sql.md](docs/06-data-export-sql.md) | ABAP SQL ดึง open item จาก released CDS view |
 
 ## การแบ่งงาน push
 
