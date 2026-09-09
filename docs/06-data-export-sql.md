@@ -206,6 +206,62 @@ SELECT FinancialAccountType,
 
 ---
 
+## Q12 — ดึงบรรทัดของเอกสารที่ functional เตรียมให้ (เคสจริงของ POC)
+
+ชุดที่ได้มา 2026-09-09 — เป็นเคส **AR (customer)**
+
+```
+Sales order        JA30000116
+Billing document   JA70000046
+FI invoice         9400000005     ← เดบิตลูกหนี้
+Payment document   3300000017     ← เครดิตลูกหนี้
+```
+
+```abap
+SELECT CompanyCode,
+       FinancialAccountType,
+       Customer,
+       Supplier,
+       GLAccount,
+       FiscalYear,
+       AccountingDocument,
+       AccountingDocumentItem,
+       PostingKey,
+       DebitCreditCode,
+       TransactionCurrency,
+       AmountInTransactionCurrency,
+       PostingDate,
+       DocumentDate,
+       AccountingDocumentType,
+       SpecialGLCode,
+       IsOpenItemManaged,
+       ClearingAccountingDocument,
+       ClearingDate,
+       AssignmentReference,
+       DocumentItemText
+  FROM I_OperationalAcctgDocItem
+  WHERE CompanyCode        = '1000'
+    AND AccountingDocument IN ( '9400000005', '3300000017' )
+  ORDER BY AccountingDocument, AccountingDocumentItem
+  INTO TABLE @DATA(lt_case).
+```
+
+### อ่านผลยังไง
+
+| เช็ค | ต้องเป็น |
+|---|---|
+| `FinancialAccountType` | เอาเฉพาะบรรทัด `D` — บรรทัด revenue / tax / bank (`S`) ไม่ต้องส่งเข้า API |
+| `ClearingAccountingDocument` | **ต้องว่าง** ถ้าไม่ว่าง = payment เคลียร์ invoice ไปแล้วตอน post ใช้ทำ POC ไม่ได้ |
+| `IsOpenItemManaged` | `X` |
+| `SpecialGLCode` | ว่าง |
+| `AmountInTransactionCurrency` | สองบรรทัดต้องบวกกันได้ 0 พอดี |
+| `Customer` | ต้องเป็นรายเดียวกันทั้งสองเอกสาร |
+
+> ถ้า payment ปิด invoice ไปแล้ว ให้ขอ functional post payment ใหม่แบบ
+> **ไม่ระบุ invoice** (post เป็น open item ลอย ๆ) แล้วค่อยให้ API เป็นตัว clear
+
+---
+
 ## Q11 — open item ที่เพิ่ง post ล่าสุด (ใช้หา data ที่ functional เพิ่งเตรียมให้)
 
 เรียงจากเอกสารใหม่สุด ครอบคลุมทั้ง K / D / S ในทีเดียว
