@@ -65,4 +65,5 @@ prefix ตัวแปรตาม global rules (`gc_` / `lv_` / `lo_` / `ls_` /
   **ยังไม่ได้ยิงออกไปเลย** ไม่ใช่ปัญหา payload — เช็ค `gc_service_id`
   ให้ตรงกับคอลัมน์ *Outbound Service ID* ใน ADT > comm scenario > tab Outbound
 - `create_by_comm_arrangement( )` รับ parameter เป็น fixed-length char ไม่ใช่ string
-  → `gc_comm_scenario` ต้องเป็น `char30` และ `gc_service_id` ต้องเป็น `char40`
+  → `comm_scenario` = `char30` · `service_id` = `char40` ·
+  `comm_system_id` = `c LENGTH 60`

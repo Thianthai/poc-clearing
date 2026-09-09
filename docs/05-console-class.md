@@ -91,7 +91,7 @@ CLASS ycl_clearing_runner DEFINITION
     CONSTANTS gc_comm_scenario TYPE char30 VALUE 'ZCS_SPORTPACKAGE_CLEARING'.
     "! ต้องตรงกับคอลัมน์ Outbound Service ID ใน ADT เป๊ะ (ADT เติม _REST ให้เอง)
     CONSTANTS gc_service_id    TYPE char40 VALUE 'ZAPI_SPORTPACKAGE_CLEARING_REST'.
-    CONSTANTS gc_comm_system   TYPE char30 VALUE 'ABAP_DEV'.
+    CONSTANTS gc_comm_system   TYPE c LENGTH 60 VALUE 'ABAP_DEV'.
     CONSTANTS gc_soap_action   TYPE string
       VALUE 'http://sap.com/xi/SAPSCORE/SFIN/JournalEntryBulkClearingRequest_In/JournalEntryBulkClearingRequest_InRequest'.
 
