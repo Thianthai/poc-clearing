@@ -32,6 +32,34 @@ YCL_CLEARING  ──POST──▶  https://<host>-api.s4hana.cloud.sap
 body ว่าง ไม่ได้แปลว่า clear สำเร็จ ต้องไปดูผลจริงที่ Message Dashboard
 ด้วย Message ID ที่ console พิมพ์ออกมา
 
+## ผลลัพธ์ POC — ✅ สำเร็จ (2026-09-09)
+
+ยิง SOAP API จาก ABAP Cloud console class แล้ว **clear เอกสารได้จริง**
+
+| | |
+|---|---|
+| Test case | AR full clearing · customer `0001000082` · THB |
+| Invoice | `9400000005` / 2026 / item 001 · +6,418.93 |
+| Payment | `3300000017` / 2026 / item 005 · −6,418.93 |
+| **Clearing document** | **`0100000000`** ลงวันที่ 2026-09-09 |
+
+บรรทัด G/L (bank / revenue / tax) ไม่ต้องส่งเข้า API — ระบบสร้าง offsetting ให้เอง
+
+### สิ่งที่พิสูจน์ได้
+
+- ABAP Cloud เรียก inbound SOAP service ของ tenant ตัวเองได้ผ่าน
+  communication arrangement โดยไม่ต้อง hardcode credential
+- ประกอบ SOAP envelope + WS-Addressing header เองด้วย string template ใช้งานได้จริง
+  ไม่ต้องมี consumer proxy
+- รองรับ full / partial / residual clearing ครบตาม field ที่ API เปิดให้
+
+### ข้อจำกัดที่ต้องรู้ก่อนเอาไปทำต่อ
+
+- API **ไม่รองรับ Special G/L indicator** และ **สร้างบรรทัด bank เองไม่ได้**
+  ทำได้แค่ clear open item ที่มีอยู่แล้ว
+- เป็น async → ต้องมีทางตามผล (AIF Message Dashboard หรือเปิด
+  outbound confirmation service)
+
 ## เอกสาร
 
 | ไฟล์ | เนื้อหา |

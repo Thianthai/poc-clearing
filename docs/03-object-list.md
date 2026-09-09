@@ -48,6 +48,8 @@ payload หรือมาจาก destination
 | 2026-09-09 | ยิงจริงครั้งที่ 1 (**client 80**) | ❌ `CX_HTTP_DEST_PROVIDER_ERROR` |
 | 2026-09-09 | ยิงจริงครั้งที่ 2 (**client 100** + `comm_system_id`) | ✅ **HTTP 202 Accepted** |
 | 2026-09-09 | ยิงครั้งที่ 3 (**client 100** ไม่ส่ง `comm_system_id`) | ✅ 202 → พิสูจน์ว่าสาเหตุคือ **client** ไม่ใช่ `comm_system_id` |
+| 2026-09-09 | Message Dashboard ว่างเปล่าทั้งเดือน | ⚠️ user ไม่ถูก assign AIF recipient — ไม่ใช่ว่า message ไม่เข้า |
+| 2026-09-09 10:00 UTC | **ยิง post จริง** (`TestDataIndicator = false`) | ✅ **POC สำเร็จ** — ทั้ง 2 บรรทัดถูก clear ด้วยเอกสาร `0100000000` วันที่ 2026-09-09 |
 
 ### ยังพิสูจน์ไม่ได้ (รออะไรอยู่)
 
@@ -55,4 +57,4 @@ payload หรือมาจาก destination
 |---|---|
 | ~~destination + auth~~ | ✅ ping ผ่านแล้ว |
 | ~~endpoint / SOAPAction~~ | ✅ HTTP 202 |
-| business logic ของ clearing | ผล AIF Message Dashboard |
+| ~~business logic ของ clearing~~ | ✅ clear สำเร็จจริง |
