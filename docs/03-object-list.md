@@ -45,11 +45,13 @@ payload หรือมาจาก destination
 | 2026-09-09 | ได้ test data จริงจาก functional (AR: invoice 9400000005 + payment 3300000017) | ✅ ตรวจแล้วยอดหักล้างกันพอดี ยังไม่ถูก clear เติมลง `get_apar_items( )` แล้ว |
 | 2026-09-09 | dry-run ด้วย data จริง | ✅ payload ครบถูกต้อง — `APARItems` 2 ก้อน, `AccountType D`, FY2026, item 001/005 · **ฝั่ง ABAP พร้อมยิง** |
 | 2026-09-09 | config C1–C4 ครบ + **Check Connection ผ่าน** | ✅ host + credential + path ถูกต้อง — พร้อมยิงจริง |
+| 2026-09-09 | ยิงจริงครั้งที่ 1 | ❌ `CX_HTTP_DEST_PROVIDER_ERROR` — ไม่ได้ส่ง `comm_system_id` |
+| 2026-09-09 | ยิงจริงครั้งที่ 2 (ใส่ `comm_system_id`) | ✅ **HTTP 202 Accepted** — destination + auth + endpoint + WS-A ผ่านหมด |
 
 ### ยังพิสูจน์ไม่ได้ (รออะไรอยู่)
 
 | หัวข้อ | รอ |
 |---|---|
 | ~~destination + auth~~ | ✅ ping ผ่านแล้ว |
-| endpoint / SOAPAction ถูกไหม | ยิงจริงครั้งแรก |
-| business logic ของ clearing | ยิงจริงครั้งแรก (test data พร้อมแล้ว) |
+| ~~endpoint / SOAPAction~~ | ✅ HTTP 202 |
+| business logic ของ clearing | ผล AIF Message Dashboard |

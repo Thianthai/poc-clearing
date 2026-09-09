@@ -64,6 +64,9 @@ prefix ตัวแปรตาม global rules (`gc_` / `lv_` / `lo_` / `ls_` /
   `CX_HTTP_DEST_PROVIDER_ERROR` = หา comm arrangement ไม่เจอ
   **ยังไม่ได้ยิงออกไปเลย** ไม่ใช่ปัญหา payload — เช็ค `gc_service_id`
   ให้ตรงกับคอลัมน์ *Outbound Service ID* ใน ADT > comm scenario > tab Outbound
+- **ต้องส่ง `comm_system_id` ด้วย** เมื่อ comm scenario ตั้ง Allowed Instances เป็น
+  *one instance per scenario & communication system* — ไม่ส่งจะได้
+  `The selection did not return any results.` แม้ scenario/service id จะถูกทุกตัว
 - `create_by_comm_arrangement( )` รับ parameter เป็น fixed-length char ไม่ใช่ string
   → `comm_scenario` = `char30` · `service_id` = `char40` ·
   `comm_system_id` = `c LENGTH 60`
