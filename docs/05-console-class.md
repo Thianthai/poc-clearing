@@ -441,3 +441,46 @@ ENDCLASS.
 | `SOAPAction` ไม่มี `"` ครอบ | บาง stack ต้องการ quote | ใส่ `"` ครอบค่าใน `set_header_fields( )` |
 
 ทั้ง 5 อันแก้ที่เดียวคือ constant หรือ `build_envelope( )` ไม่ต้องรื้อโครงสร้าง
+
+## Message Dashboard ว่างเปล่าทั้งที่ได้ HTTP 202
+
+**ไม่ใช่ว่า message ไม่เข้า** — AIF Message Dashboard แสดงเฉพาะ message ของ
+**recipient ที่ user ถูก assign ไว้** ถ้า user ยังไม่ถูก assign กับ recipient ไหนเลย
+หน้าจอจะว่างเปล่าโดยไม่มี error บอกใบ้
+
+แก้ที่ Fiori app **Assign Recipients to Users** → assign recipient ของ namespace
+`http://sap.com/xi/SAPSCORE/SFIN` ให้ user ตัวเอง
+
+ถ้าแก้ไม่ได้ ขึ้น *"No authorization to edit user-recipient assignment"*
+= ขาด business catalog `SAP_CA_BC_COM_CONF_PC` (บาง release เป็น
+`SAP_CA_BC_COM_CONF_BC`) ต้องให้ admin เพิ่ม business role
+
+อ้างอิง: [SAP KBA 3358732](https://userapps.support.sap.com/sap/support/knowledge/en/3358732) ·
+[SAP KBA 3096609](https://userapps.support.sap.com/sap/support/knowledge/en/3096609)
+
+### ทางพิสูจน์ที่ไม่พึ่ง AIF
+
+ตั้ง `gc_test_run = 'false'` ยิง post จริง แล้ว query เช็คว่าถูก clear หรือยัง
+
+```abap
+SELECT FiscalYear,
+       AccountingDocument,
+       AccountingDocumentItem,
+       Customer,
+       AmountInTransactionCurrency,
+       ClearingAccountingDocument,
+       ClearingDate
+  FROM I_OperationalAcctgDocItem
+  WHERE CompanyCode          = '1000'
+    AND FiscalYear           = '2026'
+    AND AccountingDocument   IN ( '9400000005', '3300000017' )
+    AND FinancialAccountType = 'D'
+  ORDER BY AccountingDocument, AccountingDocumentItem
+  INTO TABLE @DATA(lt_check).
+```
+
+`ClearingAccountingDocument` มีเลข = สำเร็จ · ยังว่าง = ตกที่ business validation
+ซึ่งต้องแก้ AIF visibility ให้ได้ก่อนถึงจะรู้สาเหตุ
+
+> message ที่ยิงด้วย `TestDataIndicator = true` ไม่ post อะไรเลย
+> จึงไม่มีอะไรให้เช็คจาก DB — ต้องยิงด้วย `'false'` ถึงจะเห็นผล

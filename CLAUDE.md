@@ -52,6 +52,11 @@ prefix ตัวแปรตาม global rules (`gc_` / `lv_` / `lo_` / `ls_` /
 
 - API เป็น **async** → HTTP 202 + body ว่าง ไม่ได้แปลว่าสำเร็จ
   ต้องตามผลที่ Fiori app *Message Dashboard* / AIF ด้วย Message ID
+- **Message Dashboard ว่างเปล่าทั้งที่ได้ 202** = user ยังไม่ถูก assign กับ
+  AIF recipient ไม่ใช่ว่า message ไม่เข้า → Fiori app *Assign Recipients to Users*
+  (ต้องมี business catalog `SAP_CA_BC_COM_CONF_PC`)
+  ทางพิสูจน์ที่ไม่พึ่ง AIF: ยิงด้วย `gc_test_run = 'false'` แล้ว query
+  `ClearingAccountingDocument` ใน `I_OperationalAcctgDocItem`
 - ต้องส่ง **WS-Addressing header** (`wsa:Action` + `wsa:MessageID`) ใน SOAP header
   ไม่งั้น service ตอบ error — เทียบเท่ากับติ๊ก WS-A ใน SoapUI
 - Message header `ID` ต้อง **unique และไม่เกิน 35 ตัวอักษร**
