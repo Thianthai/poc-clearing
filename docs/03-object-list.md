@@ -6,8 +6,8 @@
 | # | Object | Type | ใครสร้าง | Status |
 |---|---|---|---|---|
 | 1 | `YPOC_CLEARING` | Package | ผู้ใช้ (ADT) | ⬜ ยังไม่สร้าง |
-| 2 | `YOS_CLEARING_SOAP` | Outbound Service (HTTP) | ผู้ใช้ (ADT) | ⬜ ยังไม่สร้าง |
-| 3 | `YCS_CLEARING` | Communication Scenario | ผู้ใช้ (ADT) | ⬜ ยังไม่สร้าง |
+| 2 | `YOS_CLEARING_SOAP` | Outbound Service (HTTP) | ผู้ใช้ (ADT) | 🔜 ทำต่อจากนี้ |
+| 3 | `YCS_CLEARING` | Communication Scenario | ผู้ใช้ (ADT) | 🔜 ทำต่อจากนี้ |
 | 4 | `YCL_CLEARING_RUNNER` | Class (console, `IF_OO_ADT_CLASSRUN`) | ผู้ใช้ copy จาก chat | 🟡 activate + รัน dry-run ผ่านแล้ว ยังไม่ push |
 
 Legend: ⬜ ยังไม่สร้าง · 🟡 สร้างแล้วยังไม่ push · ✅ push ขึ้น repo แล้ว
@@ -16,9 +16,9 @@ Legend: ⬜ ยังไม่สร้าง · 🟡 สร้างแล้�
 
 | # | สิ่งที่ต้องทำ | ที่ | Status |
 |---|---|---|---|
-| C1 | Communication User | Fiori: Maintain Communication Users | ⬜ |
-| C2 | Communication System (ชี้ tenant ตัวเอง) | Fiori: Communication Systems | ⬜ |
-| C3 | Comm Arrangement `SAP_COM_0002` (inbound) | Fiori: Communication Arrangements | ⬜ |
+| C1 | Communication User `ABAP_DEV` | Fiori: Maintain Communication Users | ✅ ใช้ตัวที่มีอยู่แล้ว |
+| C2 | Communication System `ABAP_DEV` (host `my423102-api...`) | Fiori: Communication Systems | ✅ inbound + outbound user พร้อม |
+| C3 | Comm Arrangement `SAP_COM_0002` (inbound) | Fiori: Communication Arrangements | ✅ Save พ้น Draft + ปิด confirmation outbound แล้ว |
 | C4 | Comm Arrangement `YCS_CLEARING` (outbound) | Fiori: Communication Arrangements | ⬜ |
 
 รายละเอียดขั้นตอนอยู่ที่ [02-communication-setup.md](02-communication-setup.md)
