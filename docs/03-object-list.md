@@ -8,7 +8,7 @@
 | 1 | `YPOC_CLEARING` | Package | ผู้ใช้ (ADT) | ⬜ ยังไม่สร้าง |
 | 2 | `YOS_CLEARING_SOAP` | Outbound Service (HTTP) | ผู้ใช้ (ADT) | ⬜ ยังไม่สร้าง |
 | 3 | `YCS_CLEARING` | Communication Scenario | ผู้ใช้ (ADT) | ⬜ ยังไม่สร้าง |
-| 4 | `YCL_CLEARING_RUNNER` | Class (console, `IF_OO_ADT_CLASSRUN`) | ผู้ใช้ copy จาก chat | 🟡 draft v2 พร้อมใน docs/05 (dry-run mode) |
+| 4 | `YCL_CLEARING_RUNNER` | Class (console, `IF_OO_ADT_CLASSRUN`) | ผู้ใช้ copy จาก chat | 🟡 activate + รัน dry-run ผ่านแล้ว ยังไม่ push |
 
 Legend: ⬜ ยังไม่สร้าง · 🟡 สร้างแล้วยังไม่ push · ✅ push ขึ้น repo แล้ว
 
@@ -35,3 +35,9 @@ Legend: ⬜ ยังไม่สร้าง · 🟡 สร้างแล้�
 
 ถ้าข้อ 2 ยังไม่ผ่าน อย่าเพิ่งไปข้อ 3 — จะแยกไม่ออกว่า error มาจาก
 payload หรือมาจาก destination
+
+## Log การทดสอบ
+
+| วันที่ | ทำอะไร | ผล |
+|---|---|---|
+| 2026-09-09 | activate `YCL_CLEARING_RUNNER` แล้วรัน dry-run โดยยังไม่มี item | ✅ UUID + guard + dry-run ทำงานถูก ไม่ยิงออกไป |
