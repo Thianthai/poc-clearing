@@ -4,27 +4,47 @@
 > ผู้ใช้เป็นคน copy code นี้ไปสร้างใน ADT แล้ว push ผ่าน abapGit เอง
 > ถ้าแก้บน tenant แล้ว ให้บอก Claude มาอัปเดตหน้านี้ตาม
 
+## สถานะ: draft — รอ test data จาก functional
+
+`get_apar_items( )` และ `get_gl_items( )` ยัง comment ไว้ทั้งคู่ เพราะ ณ 2026-09-09
+ยังไม่มี open item ที่หักล้างกันพอดีบน tenant (ดู [06](06-data-export-sql.md))
+
+class ตั้ง `gc_dry_run = abap_true` ไว้ → รันได้เลยตั้งแต่ตอนนี้ จะเห็น payload
+ที่ประกอบเสร็จโดยยังไม่ยิงออกไป และยังไม่ต้องมี communication arrangement
+
 ## วิธีใช้
 
 1. ADT → package `YPOC_CLEARING` → New → ABAP Class → `YCL_CLEARING_RUNNER`
-2. วาง code ข้างล่างทับทั้งหมด → activate
-3. แก้ constant ที่ขึ้นต้น `CHANGE_ME_` และ `get_apar_items( )` ให้เป็นค่าจริง
-4. กด **F9** (Run as Console Application)
+2. วาง code ข้างล่างทับทั้งหมด → activate → **F9** (Run as Console Application)
+3. ได้ test data มาแล้ว → uncomment `get_gl_items( )` หรือ `get_apar_items( )`
+   แล้วเติมค่าจริง
+4. พร้อมยิงจริง → ตั้ง `gc_dry_run = abap_false` (ยังคง `gc_test_run = 'true'`
+   เพื่อให้ SAP simulate ก่อน)
+5. ผ่านแล้วค่อยตั้ง `gc_test_run = 'false'` เพื่อ post จริง
 
-รอบแรกให้ `gc_test_run = 'true'` ก่อน (simulate) แล้วค่อยเปลี่ยนเป็น `'false'`
+## สวิตช์ 2 ตัวที่ต้องเข้าใจ
+
+| Constant | ค่า | ผล |
+|---|---|---|
+| `gc_dry_run` | `abap_true` | ประกอบ payload พิมพ์ออกจอ **ไม่ยิง** |
+| | `abap_false` | ยิงออกไปจริง |
+| `gc_test_run` | `'true'` | ยิงจริง แต่บอก SAP ให้ simulate ไม่ post เอกสาร |
+| | `'false'` | post เอกสาร clearing จริง |
 
 ## สิ่งที่ class นี้ทำ
 
 | ขั้น | รายละเอียด |
 |---|---|
 | 1 | generate Message ID (unique, < 35 chars) + WS-A MessageID (uuid) |
-| 2 | ประกอบ SOAP envelope เป็น string — WS-A header + payload |
-| 3 | ขอ destination จาก comm arrangement `YCS_CLEARING` |
-| 4 | POST พร้อม header `Content-Type: text/xml` + `SOAPAction` |
-| 5 | พิมพ์ request / HTTP status / body ออก console |
+| 2 | เช็คว่ามี item ให้ clear ไหม ถ้าไม่มีก็หยุด |
+| 3 | ประกอบ SOAP envelope เป็น string — WS-A header + payload |
+| 4 | ถ้า dry run → พิมพ์แล้วจบ |
+| 5 | ขอ destination จาก comm arrangement `YCS_CLEARING` แล้ว POST |
+| 6 | พิมพ์ HTTP status / body ออก console |
+
+รองรับครบทั้ง full / partial / residual clearing ผ่าน field ใน `ty_apar_item`
 
 **ไม่ทำ**: ไม่ retry, ไม่ log ลง table, ไม่ตามผลจาก Message Dashboard ให้
-เป็น POC ล้วน ๆ
 
 ## Source
 
@@ -41,15 +61,17 @@ CLASS ycl_clearing_runner DEFINITION
     TYPES:
       "! open item ฝั่ง customer / vendor ที่จะ clear
       BEGIN OF ty_apar_item,
-        ref_doc_item   TYPE i,
-        company_code   TYPE string,
-        account_type   TYPE string,        "D = customer, K = vendor
-        apar_account   TYPE string,
-        fiscal_year    TYPE string,
-        acctg_doc      TYPE string,
-        acctg_doc_item TYPE string,
-        partial_amount TYPE string,        "เว้นว่าง = full clearing
-        diff_reason    TYPE string,
+        ref_doc_item    TYPE i,
+        company_code    TYPE string,
+        account_type    TYPE string,       "D = customer, K = vendor
+        apar_account    TYPE string,
+        fiscal_year     TYPE string,
+        acctg_doc       TYPE string,
+        acctg_doc_item  TYPE string,
+        partial_amount  TYPE string,       "partial clearing
+        cash_discount   TYPE string,       "residual: ส่วนลดเงินสด
+        other_deduction TYPE string,       "residual: ยอดคงเหลือ (ใส่ค่าติดลบ)
+        diff_reason     TYPE string,       "reason code ของผลต่าง
       END OF ty_apar_item,
       tt_apar_item TYPE STANDARD TABLE OF ty_apar_item WITH EMPTY KEY,
 
@@ -70,12 +92,19 @@ CLASS ycl_clearing_runner DEFINITION
     CONSTANTS gc_soap_action   TYPE string
       VALUE 'http://sap.com/xi/SAPSCORE/SFIN/JournalEntryBulkClearingRequest_In/JournalEntryBulkClearingRequest_InRequest'.
 
-    "--- ข้อมูลทดสอบระดับ header : แก้ค่าตรงนี้ ---
-    CONSTANTS gc_test_run      TYPE string VALUE 'true'.   "true = simulate, false = post จริง
-    CONSTANTS gc_company_code  TYPE string VALUE 'CHANGE_ME_CCODE'.
+    "--- โหมดการรัน ---
+    "gc_dry_run  = X  → ประกอบ payload แล้วพิมพ์ออกจอเฉย ๆ ไม่ยิงจริง
+    "                   ใช้ตอนยังไม่มี comm arrangement / ยังไม่มี test data
+    "gc_test_run = true → ยิงจริงแต่ให้ SAP simulate ไม่ post เอกสาร
+    CONSTANTS gc_dry_run  TYPE abap_bool     VALUE abap_true.
+    CONSTANTS gc_test_run TYPE string       VALUE 'true'.
+
+    "--- ข้อมูลทดสอบระดับ header ---
+    CONSTANTS gc_company_code  TYPE string VALUE '1000'.
     CONSTANTS gc_document_type TYPE string VALUE 'AB'.
     CONSTANTS gc_currency      TYPE string VALUE 'THB'.
     CONSTANTS gc_header_text   TYPE string VALUE 'POC Clearing via SOAP'.
+    CONSTANTS gc_reference_doc TYPE string VALUE 'POC-CLEAR'.
     CONSTANTS gc_created_by    TYPE string VALUE 'POC_USER'.
 
     METHODS get_apar_items
@@ -91,6 +120,10 @@ CLASS ycl_clearing_runner DEFINITION
       IMPORTING iv_message_id     TYPE string
                 iv_wsa_message_id TYPE string
       RETURNING VALUE(rv_xml)     TYPE string.
+
+    METHODS send_request
+      IMPORTING iv_payload TYPE string
+                io_out     TYPE REF TO if_oo_adt_classrun_out.
 
 ENDCLASS.
 
@@ -109,13 +142,42 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
         RETURN.
     ENDTRY.
 
+    "2) เช็คว่ามี item ให้ clear จริงไหม
+    DATA(lv_item_count) = lines( get_gl_items( ) ) + lines( get_apar_items( ) ).
+
+    out->write( |Message ID  : { lv_message_id }| ).
+    out->write( |Company code: { gc_company_code }| ).
+    out->write( |Items       : { lv_item_count }| ).
+    out->write( |Test run    : { gc_test_run }| ).
+    out->write( |Dry run     : { gc_dry_run }| ).
+
+    IF lv_item_count = 0.
+      out->write( `ยังไม่มี open item ใน get_gl_items( ) / get_apar_items( ) — เติมข้อมูลก่อน` ).
+      RETURN.
+    ENDIF.
+
+    "3) ประกอบ payload
     DATA(lv_payload) = build_envelope( iv_message_id     = lv_message_id
                                        iv_wsa_message_id = lv_wsa_msg_id ).
 
-    out->write( |Message ID : { lv_message_id }| ).
-    out->write( |Test run   : { gc_test_run }| ).
     out->write( `----- SOAP request -----` ).
     out->write( lv_payload ).
+
+    "4) ยิงจริง (ข้ามถ้าอยู่ในโหมด dry run)
+    IF gc_dry_run = abap_true.
+      out->write( `DRY RUN — ยังไม่ได้ยิงออกไป ตั้ง gc_dry_run = abap_false เมื่อพร้อม` ).
+      RETURN.
+    ENDIF.
+
+    send_request( iv_payload = lv_payload
+                  io_out     = out ).
+
+    out->write( |ตามผลที่ Fiori app Message Dashboard ด้วย ID { lv_message_id }| ).
+
+  ENDMETHOD.
+
+
+  METHOD send_request.
 
     TRY.
         DATA(lo_destination) = cl_http_destination_provider=>create_by_comm_arrangement(
@@ -128,7 +190,7 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
         lo_request->set_header_fields( VALUE #(
             ( name = 'Content-Type' value = 'text/xml; charset=utf-8' )
             ( name = 'SOAPAction'   value = gc_soap_action ) ) ).
-        lo_request->set_text( lv_payload ).
+        lo_request->set_text( iv_payload ).
 
         DATA(lo_response) = lo_client->execute( if_web_http_client=>post ).
         DATA(ls_status)   = lo_response->get_status( ).
@@ -136,20 +198,20 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
 
         lo_client->close( ).
 
-        out->write( `----- HTTP response -----` ).
-        out->write( |HTTP { ls_status-code } { ls_status-reason }| ).
-        out->write( COND string( WHEN lv_body IS INITIAL THEN `(body ว่าง — ปกติสำหรับ async)` ELSE lv_body ) ).
+        io_out->write( `----- HTTP response -----` ).
+        io_out->write( |HTTP { ls_status-code } { ls_status-reason }| ).
+        io_out->write( COND string( WHEN lv_body IS INITIAL
+                                    THEN `(body ว่าง — ปกติสำหรับ async)`
+                                    ELSE lv_body ) ).
 
-        IF ls_status-code = 202 OR ls_status-code = 200.
-          out->write( |รับ request แล้ว — ผลจริงดูที่ Fiori app Message Dashboard ด้วย ID { lv_message_id }| ).
-        ELSE.
-          out->write( `ยิงไม่ผ่าน — ดู body ข้างบนเป็น SOAP fault` ).
+        IF ls_status-code <> 202 AND ls_status-code <> 200.
+          io_out->write( `ยิงไม่ผ่าน — body ข้างบนคือ SOAP fault` ).
         ENDIF.
 
       CATCH cx_http_dest_provider_error
             cx_web_http_client_error
             cx_web_message_error INTO DATA(lx_error).
-        out->write( |ERROR: { lx_error->get_text( ) }| ).
+        io_out->write( |ERROR: { lx_error->get_text( ) }| ).
     ENDTRY.
 
   ENDMETHOD.
@@ -195,6 +257,9 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
       |          <DocumentHeaderText>| &&
       |{ escape( val = gc_header_text format = cl_abap_format=>e_xml_text ) }| &&
       |</DocumentHeaderText>\n| &&
+      |          <ReferenceDocument>| &&
+      |{ escape( val = gc_reference_doc format = cl_abap_format=>e_xml_text ) }| &&
+      |</ReferenceDocument>\n| &&
       |          <CreatedByUser>{ gc_created_by }</CreatedByUser>\n| &&
       build_items_xml( ) &&
       |        </JournalEntry>\n| &&
@@ -237,6 +302,12 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
         COND string( WHEN ls_apar-partial_amount IS NOT INITIAL
                      THEN |            <PartialPaymentAmtInDspCrcy currencyCode="{ gc_currency }">| &&
                           |{ ls_apar-partial_amount }</PartialPaymentAmtInDspCrcy>\n| ) &&
+        COND string( WHEN ls_apar-cash_discount IS NOT INITIAL
+                     THEN |            <CashDiscountAmountInDspCrcy currencyCode="{ gc_currency }">| &&
+                          |{ ls_apar-cash_discount }</CashDiscountAmountInDspCrcy>\n| ) &&
+        COND string( WHEN ls_apar-other_deduction IS NOT INITIAL
+                     THEN |            <OtherDeductionAmountInDspCrcy currencyCode="{ gc_currency }">| &&
+                          |{ ls_apar-other_deduction }</OtherDeductionAmountInDspCrcy>\n| ) &&
         COND string( WHEN ls_apar-diff_reason IS NOT INITIAL
                      THEN |            <PaymentDifferenceReason>{ ls_apar-diff_reason }</PaymentDifferenceReason>\n| ) &&
         |          </APARItems>\n|.
@@ -247,29 +318,49 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
 
   METHOD get_apar_items.
 
-    "ข้อมูลทดสอบ: open item ของ vendor 2 บรรทัดที่หักล้างกันพอดี
-    "แทน CHANGE_ME_* ด้วยค่าจริงจากระบบ (ดู docs/04-test-data.md)
-    rt_items = VALUE #(
-      company_code = gc_company_code
-      account_type = 'K'
-      ( ref_doc_item   = 1
-        apar_account   = 'CHANGE_ME_VENDOR'
-        fiscal_year    = 'CHANGE_ME_YEAR'
-        acctg_doc      = 'CHANGE_ME_DOC1'
-        acctg_doc_item = '1' )
-      ( ref_doc_item   = 2
-        apar_account   = 'CHANGE_ME_VENDOR'
-        fiscal_year    = 'CHANGE_ME_YEAR'
-        acctg_doc      = 'CHANGE_ME_DOC2'
-        acctg_doc_item = '1' ) ).
+    "==========================================================
+    " เคส AP / AR — รอ test data จาก functional
+    " เงื่อนไข: ทุกบรรทัดต้องเป็น open item จริง ยอดรวม (signed) = 0
+    "           และ SpecialGLCode ต้องว่าง (API ไม่รองรับ special G/L)
+    "==========================================================
+*    rt_items = VALUE #(
+*      company_code = gc_company_code
+*      account_type = 'K'
+*      ( ref_doc_item   = 1
+*        apar_account   = 'CHANGE_ME_VENDOR'
+*        fiscal_year    = 'CHANGE_ME_YEAR'
+*        acctg_doc      = 'CHANGE_ME_DOC1'
+*        acctg_doc_item = '1' )
+*      ( ref_doc_item   = 2
+*        apar_account   = 'CHANGE_ME_VENDOR'
+*        fiscal_year    = 'CHANGE_ME_YEAR'
+*        acctg_doc      = 'CHANGE_ME_DOC2'
+*        acctg_doc_item = '1' ) ).
+
+    CLEAR rt_items.
 
   ENDMETHOD.
 
 
   METHOD get_gl_items.
 
-    "เว้นว่างไว้ = ไม่ clear ฝั่ง G/L
-    "ถ้าจะทดสอบ G/L clearing ให้ย้ายมาใส่ที่นี่ แล้วเคลียร์ get_apar_items ให้ว่าง
+    "==========================================================
+    " เคส G/L — รอ test data จาก functional
+    " บัญชีต้อง IsOpenItemManaged = 'X'
+    "==========================================================
+*    rt_items = VALUE #(
+*      company_code = gc_company_code
+*      ( ref_doc_item   = 1
+*        gl_account     = 'CHANGE_ME_GLACCT'
+*        fiscal_year    = 'CHANGE_ME_YEAR'
+*        acctg_doc      = 'CHANGE_ME_DOC1'
+*        acctg_doc_item = '1' )
+*      ( ref_doc_item   = 2
+*        gl_account     = 'CHANGE_ME_GLACCT'
+*        fiscal_year    = 'CHANGE_ME_YEAR'
+*        acctg_doc      = 'CHANGE_ME_DOC2'
+*        acctg_doc_item = '1' ) ).
+
     CLEAR rt_items.
 
   ENDMETHOD.
@@ -281,11 +372,14 @@ ENDCLASS.
 
 | อยากทำ | แก้ที่ |
 |---|---|
-| clear ฝั่ง G/L แทน AP/AR | ใส่ข้อมูลใน `get_gl_items( )` แล้วให้ `get_apar_items( )` คืนค่าว่าง |
-| partial clearing | ใส่ `partial_amount` (+ `diff_reason` ถ้ามี) ในบรรทัดที่ต้องการ |
-| residual clearing | เพิ่ม node `CashDiscountAmountInDspCrcy` / `OtherDeductionAmountInDspCrcy` ใน `build_items_xml( )` |
+| full clearing G/L | uncomment `get_gl_items( )` เติม `gl_account` + เลขเอกสาร |
+| full clearing AP/AR | uncomment `get_apar_items( )` ตั้ง `account_type` = `K` หรือ `D` |
+| partial clearing | ใส่ `partial_amount` (+ `diff_reason` ถ้ามี) ในบรรทัดที่จ่ายบางส่วน |
+| residual clearing | ใส่ `cash_discount` และ/หรือ `other_deduction` (ค่าติดลบ) |
 | fix วันที่แทนวันนี้ | แก้ `lv_doc_date` ใน `build_envelope( )` เป็น literal `'2026-09-30'` |
 | clear หลายเอกสารใน request เดียว | ทำ `JournalEntryClearingRequest` ซ้ำหลาย node ใน `build_envelope( )` |
+
+> partial clearing ใช้ร่วมกับ cash discount / residual **ไม่ได้** เป็นข้อจำกัดของ API
 
 ## Troubleshooting
 
@@ -296,4 +390,5 @@ ENDCLASS.
 | HTTP 404 | path ใน outbound service ผิด — ต้องเป็น `/sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques` |
 | HTTP 500 + SOAP fault `WS-Addressing` | header `wsa:Action` / `wsa:MessageID` หาย หรือ `SOAPAction` ไม่ตรง — ลองใส่ `"` ครอบค่า SOAPAction ดู |
 | HTTP 202 แต่ Message Dashboard ขึ้นแดง | payload ถูกรับแล้วแต่ business error เช่น ยอดไม่ balance / period ปิด / item ถูก clear ไปแล้ว |
+| *There are no open items managed in Account* | บัญชี G/L ไม่ได้เปิด open item management |
 | ไม่เห็น message ใน dashboard เลย | Message ID ซ้ำกับที่เคยส่ง → ถูกมองเป็น duplicate |
