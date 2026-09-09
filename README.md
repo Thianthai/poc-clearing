@@ -32,22 +32,26 @@ YCL_CLEARING  ──POST──▶  https://<host>-api.s4hana.cloud.sap
 body ว่าง ไม่ได้แปลว่า clear สำเร็จ ต้องไปดูผลจริงที่ Message Dashboard
 ด้วย Message ID ที่ console พิมพ์ออกมา
 
-## ผลลัพธ์ POC — 🟡 ยิงผ่านแล้ว กำลังแก้ scope ของ clearing (2026-09-09)
+## ผลลัพธ์ POC — ✅ สำเร็จ (2026-09-09)
 
 ยิง SOAP API จาก ABAP Cloud console class แล้ว **clear เอกสารได้จริง**
 
 | | |
 |---|---|
-| Test case | AR full clearing · customer `0001000082` · THB |
-| Invoice | `9400000005` / 2026 / item 001 · +6,418.93 |
-| Payment | `3300000017` / 2026 / item 005 · −6,418.93 |
-| **Clearing document** | **`0100000000`** ลงวันที่ 2026-09-09 |
+| Test case | AR full clearing + deferred output tax · customer `0001000082` · THB |
+| **Clearing document** | **`0100000002`** ลงวันที่ 2026-09-09 |
 
-> ⚠️ functional ตรวจแล้วพบว่า **ยังไม่ครบ** — ต้อง clear บรรทัด
-> **Deferred Output Tax** (G/L `0021082005` item 003 ของทั้งสองใบ) คู่ไปด้วย
-> ขั้นตอนถัดไป: reverse `0100000000` แล้วยิงใหม่ให้ครบทั้ง 4 บรรทัด
+บรรทัดที่ส่งเข้า API — ทั้งหมดถูก clear ด้วยเอกสารเดียวกัน
 
-บรรทัด G/L ที่เหลือ (bank / revenue) ไม่ต้องส่งเข้า API — ระบบสร้าง offsetting ให้เอง
+| Node | เอกสาร | FY | Item | Account | Amount (THB) |
+|---|---|---|---|---|---:|
+| `GLItems` | `9400000005` | 2026 | 003 | G/L `0021082005` | −419.93 |
+| `GLItems` | `3300000017` | 2026 | 003 | G/L `0021082005` | +419.93 |
+| `APARItems` | `9400000005` | 2026 | 001 | Customer `0001000082` | +6,418.93 |
+| `APARItems` | `3300000017` | 2026 | 005 | Customer `0001000082` | −6,418.93 |
+
+บรรทัด G/L ที่เหลือ (bank, ค่าธรรมเนียม, revenue, tax อีกตัว) ไม่ต้องส่ง
+ระบบสร้าง offsetting ให้เอง
 
 ### สิ่งที่พิสูจน์ได้
 
@@ -56,6 +60,9 @@ body ว่าง ไม่ได้แปลว่า clear สำเร็จ 
 - ประกอบ SOAP envelope + WS-Addressing header เองด้วย string template ใช้งานได้จริง
   ไม่ต้องมี consumer proxy
 - รองรับ full / partial / residual clearing ครบตาม field ที่ API เปิดให้
+- **ใส่ `GLItems` กับ `APARItems` ปนกันใน `JournalEntry` เดียวได้** — ได้ clearing
+  document ใบเดียวคลุมทั้ง AR และ deferred output tax
+  (payload ตัวอย่างของ SAP ไม่เคยแสดงเคสนี้ แต่ทดสอบแล้วใช้ได้จริง)
 
 ### ข้อจำกัดที่ต้องรู้ก่อนเอาไปทำต่อ
 

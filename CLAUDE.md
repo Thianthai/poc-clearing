@@ -61,6 +61,11 @@ prefix ตัวแปรตาม global rules (`gc_` / `lv_` / `lo_` / `ls_` /
   ไม่งั้น service ตอบ error — เทียบเท่ากับติ๊ก WS-A ใน SoapUI
 - Message header `ID` ต้อง **unique และไม่เกิน 35 ตัวอักษร**
 - ยิงซ้ำด้วย `ID` เดิม จะโดนมองเป็น duplicate message
+- **`GLItems` + `APARItems` อยู่ใน `JournalEntry` เดียวกันได้** — พิสูจน์แล้ว
+  2026-09-09 ได้ clearing document ใบเดียว (`0100000002`) คลุมทั้ง AR และ
+  deferred output tax · payload ตัวอย่างของ SAP ไม่เคยแสดงเคสนี้
+- เคส AR ที่มีภาษี ต้อง clear **Deferred Output Tax** (G/L `0021082005`)
+  คู่ไปด้วยเสมอ ไม่งั้น functional ตีกลับว่า clearing ไม่สมบูรณ์
 - ADT เติม suffix **`_REST`** ให้ outbound service แบบ HTTP อัตโนมัติ
   → ชื่อจริงคือ `ZAPI_SPORTPACKAGE_CLEARING_REST` ไม่ใช่ `ZAPI_SPORTPACKAGE_CLEARING`
   `gc_service_id` ต้องตรงกับชื่อจริง ไม่งั้น `CX_HTTP_DEST_PROVIDER_ERROR`
