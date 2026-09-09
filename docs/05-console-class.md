@@ -392,3 +392,15 @@ ENDCLASS.
 | HTTP 202 แต่ Message Dashboard ขึ้นแดง | payload ถูกรับแล้วแต่ business error เช่น ยอดไม่ balance / period ปิด / item ถูก clear ไปแล้ว |
 | *There are no open items managed in Account* | บัญชี G/L ไม่ได้เปิด open item management |
 | ไม่เห็น message ใน dashboard เลย | Message ID ซ้ำกับที่เคยส่ง → ถูกมองเป็น duplicate |
+
+## Watch list ตอนยิงจริงครั้งแรก
+
+| field | ความเสี่ยง | ถ้าพัง |
+|---|---|---|
+| `CreatedByUser` = `POC_USER` | เป็น field optional ถ้าระบบ validate กับ user จริงจะไม่ผ่าน | ลบ node นี้ออกจาก `build_envelope( )` ไปเลย หรือใส่ user จริง |
+| `AccountingDocumentType` = `AB` | config อาจจำกัด account type ที่ doc type นี้รับได้ | เปลี่ยนเป็น `DZ` (เคส customer) |
+| `AccountingDocumentItem` = `001` | ถ้า API ต้องการ external format | ตัด leading zero เหลือ `1` / `5` |
+| `APARAccount` = `0001000082` | เช่นเดียวกัน | ตัดเหลือ `1000082` |
+| `SOAPAction` ไม่มี `"` ครอบ | บาง stack ต้องการ quote | ใส่ `"` ครอบค่าใน `set_header_fields( )` |
+
+ทั้ง 5 อันแก้ที่เดียวคือ constant หรือ `build_envelope( )` ไม่ต้องรื้อโครงสร้าง

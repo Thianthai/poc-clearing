@@ -43,6 +43,7 @@ payload หรือมาจาก destination
 | 2026-09-09 | activate `YCL_CLEARING_RUNNER` แล้วรัน dry-run โดยยังไม่มี item | ✅ UUID + guard + dry-run ทำงานถูก ไม่ยิงออกไป |
 | 2026-09-09 | dry-run ด้วย GLItems 2 บรรทัด (ค่า placeholder) | ✅ payload ตรงกับตัวอย่าง SAP ทุก element — **payload builder ปิดจ๊อบ** |
 | 2026-09-09 | ได้ test data จริงจาก functional (AR: invoice 9400000005 + payment 3300000017) | ✅ ตรวจแล้วยอดหักล้างกันพอดี ยังไม่ถูก clear เติมลง `get_apar_items( )` แล้ว |
+| 2026-09-09 | dry-run ด้วย data จริง | ✅ payload ครบถูกต้อง — `APARItems` 2 ก้อน, `AccountType D`, FY2026, item 001/005 · **ฝั่ง ABAP พร้อมยิง** |
 
 ### ยังพิสูจน์ไม่ได้ (รออะไรอยู่)
 
