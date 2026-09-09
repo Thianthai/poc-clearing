@@ -4,80 +4,199 @@ Released CDS view ที่เช็คแล้วบน tenant (2026-09-09):
 
 | View | Status | ใช้ทำอะไร |
 |---|---|---|
-| `I_OperationalAcctgDocItem` | ✅ Released | **ตัวหลัก** — open item ทั้ง AP / AR / G/L |
+| `I_OperationalAcctgDocItem` | ✅ Released | **ตัวหลักตัวเดียวพอ** — AP / AR / G/L + `IsOpenItemManaged` |
 | `I_GLAccountLineItem` | ✅ Released | cross-check ฝั่ง G/L |
 | `I_JournalEntryItem` | ✅ Released | cross-check ยอดจาก ACDOCA |
-| `I_GLAccountInCompanyCode` | ✅ Released | เช็ค open item managed |
-| `I_GLAccountInChartOfAccounts` | ✅ Released | ชื่อบัญชี |
-| `I_CompanyCode` | ✅ Released | lookup |
-| `I_AccountingDocumentType` | ✅ Released | lookup |
-| `I_Supplier` · `I_SupplierCompany` | ✅ Released | lookup |
-| `I_Customer` · `I_CustomerCompany` | ✅ Released | lookup |
+| `I_GLAccountInCompanyCode` · `I_GLAccountInChartOfAccounts` | ✅ Released | ไม่จำเป็นแล้ว (ดูหมายเหตุ) |
+| `I_CompanyCode` · `I_AccountingDocumentType` | ✅ Released | lookup |
+| `I_Supplier` · `I_SupplierCompany` · `I_Customer` · `I_CustomerCompany` | ✅ Released | lookup |
 | `I_OperationalAcctgDocItemCube` | ❌ ไม่มีบน tenant | — |
+
+> `I_OperationalAcctgDocItem` มี field `IsOpenItemManaged` อยู่ในตัวเอง
+> จึงไม่ต้อง join `I_GLAccountInCompanyCode` เพื่อเช็ค open item management
+
+## Field name ที่ยืนยันจาก Q0 แล้ว
+
+`CompanyCode` · `AccountingDocument` · `FiscalYear` · `AccountingDocumentItem` ·
+`ClearingDate` · `ClearingAccountingDocument` · `ClearingJournalEntry` · `ClearingItem` ·
+`PostingKey` · `FinancialAccountType` · `SpecialGLCode` · `DebitCreditCode` ·
+`IsOpenItemManaged` · `GLAccount` · `OperationalGLAccount` · `Customer` · `Supplier` ·
+`AssignmentReference` · `DocumentItemText` · `PaymentDifferenceReason` ·
+`OffsettingAccount` · `OffsettingAccountType` · `PostingDate` · `DocumentDate` ·
+`AccountingDocumentType` · `NetDueDate` · `FiscalPeriod` ·
+`TransactionCurrency` · `AmountInTransactionCurrency` ·
+`CompanyCodeCurrency` · `AmountInCompanyCodeCurrency`
 
 ## วิธีรัน
 
-ทุก query เขียนเป็น **ABAP SQL** ใช้ได้ 2 ทาง
+ทุก query เป็น **ABAP SQL** — วางใน console class (`IF_OO_ADT_CLASSRUN`) แล้ว
+`out->write( lt_xxx ).` หรือวางใน ADT SQL Console โดยตัด `INTO TABLE @DATA(...)` ออก
 
-- **ADT → SQL Console** — วางแล้วตัด `INTO TABLE @DATA(...)` ออก
-- **Console class** (`IF_OO_ADT_CLASSRUN`) — วางทั้งก้อน แล้ว `out->write( lt_xxx ).`
-
-ทุกที่ที่เขียน `'CHANGE_ME_CCODE'` ให้แทนด้วย company code จริง
+company code ที่ใช้อยู่คือ `'1000'`
 
 ---
 
-## Q0 — ดูชื่อ field จริงก่อน (รันอันนี้ก่อนเสมอ)
+## สถานะข้อมูลบน tenant (อัปเดต 2026-09-09)
 
-ชื่อ field ใน query ถัด ๆ ไปอ้างจาก VDM มาตรฐาน ถ้า syntax error ที่ field ไหน
-ให้กลับมาดูชื่อจริงจาก Q0
+รัน Q1 แล้ว **ไม่มี vendor รายไหนที่ open item รวมกันเป็นศูนย์** — ทุกรายเหลือแต่
+ยอดเครดิต (invoice ที่ยังไม่จ่าย) ไม่มีฝั่งเดบิตมาหักล้าง
+
+```
+0001000001,THB, 8,-171307.00      0003000001,THB, 1, -8000.00
+0001000002,THB, 1, -10700.00      0004000012,THB, 1, -1050.00
+0001000006,THB,12,  -5350.00      0008000001,THB, 1,-10000.00
+0002000001,USD, 2,  -3340.00
+```
+
+จาก sample 100 แถวของ Q0 เห็นภาพเดียวกัน:
+
+| ประเภท | สิ่งที่เจอ | ใช้ทำ POC ได้ไหม |
+|---|---|---|
+| Customer (`D`) | เป็นเดบิตล้วน (invoice ค้างรับ) ไม่มีใบรับเงิน | ❌ |
+| Vendor (`K`) | เป็นเครดิตล้วน | ❌ |
+| G/L (`S`) | บัญชี `0021082005` มีทั้งเดบิตและเครดิตปนกัน | ✅ **มีหวังที่สุด** |
+
+→ เคสแรกของ POC ควรเป็น **G/L clearing** ไม่ใช่ vendor clearing
+ถ้าจำเป็นต้องทดสอบ vendor จริง ๆ ต้อง post เอกสารฝั่งตรงข้ามขึ้นมาก่อน
+(credit memo หรือ outgoing payment) แล้วค่อย clear
+
+---
+
+## Q0 — probe ชื่อ field (รันครั้งเดียวพอ ทำแล้ว)
 
 ```abap
 SELECT *
   FROM I_OperationalAcctgDocItem
-  WHERE CompanyCode = 'CHANGE_ME_CCODE'
+  WHERE CompanyCode = '1000'
   ORDER BY AccountingDocument DESCENDING
   INTO TABLE @DATA(lt_probe)
   UP TO 20 ROWS.
 ```
 
----
+## Q7 — ภาพรวม: ยังเหลืออะไรให้ clear บ้าง (รันอันนี้ก่อนทุกครั้ง)
 
-## Q1 — หา "คู่ที่ clear ได้" ของ vendor (เคสหลักของ POC)
-
-หา supplier ที่ยอด open item รวมกัน **เป็นศูนย์พอดี** → เอาทั้งกลุ่มไป clear ได้เลย
-ไม่ต้องมานั่งจับคู่เอง
+นับแยกเดบิต/เครดิต ถ้าฝั่งใดฝั่งหนึ่งเป็น 0 แปลว่า clear ไม่ได้ตั้งแต่ต้น
 
 ```abap
-SELECT Supplier,
+SELECT FinancialAccountType,
+       TransactionCurrency,
+       COUNT(*)                                                          AS TotalItems,
+       SUM( CASE WHEN AmountInTransactionCurrency > 0 THEN 1 ELSE 0 END ) AS DebitItems,
+       SUM( CASE WHEN AmountInTransactionCurrency < 0 THEN 1 ELSE 0 END ) AS CreditItems,
+       SUM( AmountInTransactionCurrency )                                 AS Balance
+  FROM I_OperationalAcctgDocItem
+  WHERE CompanyCode                = '1000'
+    AND ClearingAccountingDocument = ''
+    AND SpecialGLCode              = ''
+    AND IsOpenItemManaged          = 'X'
+  GROUP BY FinancialAccountType, TransactionCurrency
+  INTO TABLE @DATA(lt_overview).
+```
+
+## Q8 — G/L: หาบัญชีที่ open item รวมกันเป็นศูนย์ (เคสหลักตอนนี้)
+
+```abap
+SELECT GLAccount,
        TransactionCurrency,
        COUNT(*)                           AS OpenItemCount,
        SUM( AmountInTransactionCurrency ) AS OpenBalance
   FROM I_OperationalAcctgDocItem
-  WHERE CompanyCode                = 'CHANGE_ME_CCODE'
-    AND FinancialAccountType       = 'K'
+  WHERE CompanyCode                = '1000'
+    AND FinancialAccountType       = 'S'
+    AND IsOpenItemManaged          = 'X'
     AND ClearingAccountingDocument = ''
-    AND SpecialGLCode              = ''
-  GROUP BY Supplier, TransactionCurrency
+  GROUP BY GLAccount, TransactionCurrency
   HAVING SUM( AmountInTransactionCurrency ) = 0
-     AND COUNT(*) BETWEEN 2 AND 6
-  ORDER BY OpenItemCount ASCENDING
-  INTO TABLE @DATA(lt_candidates).
+     AND COUNT(*) BETWEEN 2 AND 10
+  INTO TABLE @DATA(lt_gl_candidates).
 ```
 
-- `SpecialGLCode = ''` → ตัด down payment / เงินมัดจำทิ้ง (API ไม่รองรับ)
-- `COUNT(*) BETWEEN 2 AND 6` → เอาเคสเล็ก ๆ ก่อน จะได้ debug ง่าย
-- ได้ผลลัพธ์แล้วเลือก supplier มา 1 ราย → เอาไปใส่ Q2
+ถ้าได้ผลลัพธ์ว่าง ให้ถอด `HAVING` ออกแล้วดูด้วยตาว่าบัญชีไหนมีทั้งสองฝั่ง
+(`0021082005` เป็นตัวที่เห็นแล้วว่ามี)
 
-เคส **customer** เปลี่ยน `FinancialAccountType = 'D'` และ `Supplier` → `Customer`
+## Q9 — หา "คู่ยอดเท่ากันพอดี" ตรง ๆ (ใช้ได้ทั้ง K / D / S)
+
+ไม่ต้องรอให้ทั้งบัญชีเป็นศูนย์ แค่หาเดบิต 1 บรรทัดที่มีเครดิตยอดเท่ากันอยู่
+
+```abap
+SELECT a~FinancialAccountType,
+       a~GLAccount,
+       a~Supplier,
+       a~Customer,
+       a~TransactionCurrency,
+       a~FiscalYear                  AS FiscalYear1,
+       a~AccountingDocument          AS Document1,
+       a~AccountingDocumentItem      AS Item1,
+       a~AmountInTransactionCurrency AS Amount1,
+       b~FiscalYear                  AS FiscalYear2,
+       b~AccountingDocument          AS Document2,
+       b~AccountingDocumentItem      AS Item2,
+       b~AmountInTransactionCurrency AS Amount2
+  FROM I_OperationalAcctgDocItem AS a
+  INNER JOIN I_OperationalAcctgDocItem AS b
+          ON  b~CompanyCode          = a~CompanyCode
+          AND b~FinancialAccountType = a~FinancialAccountType
+          AND b~GLAccount            = a~GLAccount
+          AND b~Supplier             = a~Supplier
+          AND b~Customer             = a~Customer
+          AND b~TransactionCurrency  = a~TransactionCurrency
+  WHERE a~CompanyCode                = '1000'
+    AND a~ClearingAccountingDocument = ''
+    AND b~ClearingAccountingDocument = ''
+    AND a~SpecialGLCode              = ''
+    AND b~SpecialGLCode              = ''
+    AND a~IsOpenItemManaged          = 'X'
+    AND b~IsOpenItemManaged          = 'X'
+    AND a~AmountInTransactionCurrency > 0
+    AND a~AmountInTransactionCurrency + b~AmountInTransactionCurrency = 0
+  INTO TABLE @DATA(lt_pairs)
+  UP TO 50 ROWS.
+```
+
+> ถ้า compiler ไม่ยอมให้บวกกันใน `WHERE` ให้ใช้ Q10 แล้วจับคู่ด้วยตาแทน
+
+## Q10 — list open item ทั้งหมดแบบเรียงตามยอด (fallback ของ Q9)
+
+เรียงตามบัญชี + ยอด จะเห็นคู่ที่ยอดเท่ากันติดกันเอง
+
+```abap
+SELECT FinancialAccountType,
+       GLAccount,
+       Supplier,
+       Customer,
+       TransactionCurrency,
+       AmountInTransactionCurrency,
+       FiscalYear,
+       AccountingDocument,
+       AccountingDocumentItem,
+       PostingKey,
+       DebitCreditCode,
+       PostingDate,
+       AccountingDocumentType,
+       AssignmentReference,
+       DocumentItemText
+  FROM I_OperationalAcctgDocItem
+  WHERE CompanyCode                = '1000'
+    AND ClearingAccountingDocument = ''
+    AND SpecialGLCode              = ''
+    AND IsOpenItemManaged          = 'X'
+  ORDER BY FinancialAccountType, GLAccount, Supplier, Customer,
+           TransactionCurrency, AmountInTransactionCurrency
+  INTO TABLE @DATA(lt_all_open).
+```
 
 ---
 
-## Q2 — ดึงบรรทัดจริงของ supplier ที่เลือก (ผลลัพธ์นี้คือของที่ต้องส่งมา)
+## Q2 — ดึงบรรทัดจริงหลังเลือกได้แล้ว
+
+เปลี่ยน filter ตามเคสที่เลือก (G/L ใช้ `FinancialAccountType = 'S'` + `GLAccount`)
 
 ```abap
 SELECT CompanyCode,
        FinancialAccountType,
+       GLAccount,
        Supplier,
+       Customer,
        FiscalYear,
        AccountingDocument,
        AccountingDocumentItem,
@@ -87,136 +206,77 @@ SELECT CompanyCode,
        AmountInTransactionCurrency,
        PostingDate,
        DocumentDate,
+       AccountingDocumentType,
        AssignmentReference,
        DocumentItemText,
        SpecialGLCode,
+       IsOpenItemManaged,
        ClearingAccountingDocument,
        ClearingDate
   FROM I_OperationalAcctgDocItem
-  WHERE CompanyCode                = 'CHANGE_ME_CCODE'
-    AND FinancialAccountType       = 'K'
-    AND Supplier                   = 'CHANGE_ME_VENDOR'
+  WHERE CompanyCode                = '1000'
+    AND FinancialAccountType       = 'S'
+    AND GLAccount                  = 'CHANGE_ME_GLACCT'
     AND ClearingAccountingDocument = ''
     AND SpecialGLCode              = ''
   ORDER BY AccountingDocument, AccountingDocumentItem
   INTO TABLE @DATA(lt_open_items).
 ```
 
-7 คอลัมน์แรกที่ console class ต้องใช้จริงคือ
-`FinancialAccountType` · `Supplier` · `FiscalYear` · `AccountingDocument` ·
-`AccountingDocumentItem` — ที่เหลือไว้ตรวจสอบด้วยตา
-
----
-
-## Q3 — เคส G/L: หาบัญชีที่ open item managed
+## Q1 — เคส vendor (เก็บไว้ใช้ทีหลัง หลังมีเอกสารฝั่งตรงข้ามแล้ว)
 
 ```abap
-SELECT gl~CompanyCode,
-       gl~GLAccount,
-       coa~GLAccountLongName
-  FROM I_GLAccountInCompanyCode AS gl
-  INNER JOIN I_GLAccountInChartOfAccounts AS coa
-    ON coa~GLAccount = gl~GLAccount
-  WHERE gl~CompanyCode = 'CHANGE_ME_CCODE'
-  ORDER BY gl~GLAccount
-  INTO TABLE @DATA(lt_gl_accounts).
-```
-
-> `I_GLAccountInCompanyCode` มี field เกี่ยวกับ open item management อยู่ —
-> รัน `SELECT *` ดูชื่อจริงก่อน (น่าจะขึ้นต้น/ลงท้ายด้วย `OpenItem`)
-> แล้วค่อยเติม `AND <field> = 'X'` เข้าไปใน WHERE
-
-## Q4 — เคส G/L: หากลุ่ม open item ที่ยอดเป็นศูนย์
-
-```abap
-SELECT GLAccount,
+SELECT Supplier,
        TransactionCurrency,
        COUNT(*)                           AS OpenItemCount,
        SUM( AmountInTransactionCurrency ) AS OpenBalance
   FROM I_OperationalAcctgDocItem
-  WHERE CompanyCode                = 'CHANGE_ME_CCODE'
-    AND FinancialAccountType       = 'S'
+  WHERE CompanyCode                = '1000'
+    AND FinancialAccountType       = 'K'
     AND ClearingAccountingDocument = ''
-  GROUP BY GLAccount, TransactionCurrency
+    AND SpecialGLCode              = ''
+  GROUP BY Supplier, TransactionCurrency
   HAVING SUM( AmountInTransactionCurrency ) = 0
      AND COUNT(*) BETWEEN 2 AND 6
-  ORDER BY OpenItemCount ASCENDING
-  INTO TABLE @DATA(lt_gl_candidates).
+  INTO TABLE @DATA(lt_candidates).
 ```
 
-จากนั้นดึงบรรทัดจริงแบบเดียวกับ Q2 แต่เปลี่ยน filter เป็น
-`FinancialAccountType = 'S' AND GLAccount = 'CHANGE_ME_GLACCT'`
-
----
+เคส customer เปลี่ยนเป็น `FinancialAccountType = 'D'` และ `Supplier` → `Customer`
 
 ## Q5 — lookup ประกอบ
 
 ```abap
-"company code + สกุลเงิน + chart of accounts
 SELECT CompanyCode, CompanyCodeName, Currency, ChartOfAccounts
   FROM I_CompanyCode
-  WHERE CompanyCode = 'CHANGE_ME_CCODE'
+  WHERE CompanyCode = '1000'
   INTO TABLE @DATA(lt_ccode).
 
-"document type ที่จะใช้ตอน clear
 SELECT AccountingDocumentType, NumberRange, IsNetDocumentType
   FROM I_AccountingDocumentType
-  WHERE AccountingDocumentType IN ( 'AB', 'DZ', 'KZ' )
+  WHERE AccountingDocumentType IN ( 'AB', 'DZ', 'KZ', 'SA' )
   INTO TABLE @DATA(lt_doctype).
-
-"ยืนยัน vendor + recon account
-SELECT sc~Supplier, s~SupplierName, sc~CompanyCode, sc~ReconciliationAccount
-  FROM I_SupplierCompany AS sc
-  INNER JOIN I_Supplier AS s ON s~Supplier = sc~Supplier
-  WHERE sc~CompanyCode = 'CHANGE_ME_CCODE'
-    AND sc~Supplier    = 'CHANGE_ME_VENDOR'
-  INTO TABLE @DATA(lt_supplier).
-```
-
----
-
-## Q6 — cross-check ยอดจาก ACDOCA (ถ้าตัวเลขไม่ตรง)
-
-`I_OperationalAcctgDocItem` มาจาก BSEG · `I_JournalEntryItem` มาจาก ACDOCA
-ถ้าสองอันไม่ตรงแปลว่าเลือก ledger ผิดหรือมี item ที่ไม่ใช่ leading ledger
-
-```abap
-SELECT CompanyCode,
-       FiscalYear,
-       AccountingDocument,
-       AccountingDocumentItem,
-       GLAccount,
-       AmountInTransactionCurrency,
-       TransactionCurrency
-  FROM I_JournalEntryItem
-  WHERE CompanyCode        = 'CHANGE_ME_CCODE'
-    AND FiscalYear         = 'CHANGE_ME_YEAR'
-    AND AccountingDocument = 'CHANGE_ME_DOC1'
-  INTO TABLE @DATA(lt_acdoca).
 ```
 
 ---
 
 ## รูปแบบผลลัพธ์ที่ส่งกลับมา
 
-จาก Q1 + Q2 ส่งมาแค่นี้พอ
-
 ```
-company_code : ____
-currency     : ____
-supplier     : ____
+company_code : 1000
+currency     : THB
+gl_account   : ____        (หรือ supplier / customer)
 
-FinancialAccountType / Supplier / FiscalYear / AccountingDocument / AccountingDocumentItem / Amount
-K / .......... / 2026 / .......... / 1 / +1,000.00
-K / .......... / 2026 / .......... / 1 / -1,000.00
+FinancialAccountType / GLAccount / FiscalYear / AccountingDocument / AccountingDocumentItem / Amount
+S / .......... / 2025 / .......... / 001 / +5,000.00
+S / .......... / 2025 / .......... / 002 / -5,000.00
 ```
-
-แล้วผมจะเอาไปเติมใน `get_apar_items( )` ของ `YCL_CLEARING_RUNNER` ให้
 
 ## ข้อควรระวังตอนอ่านผล
 
-- `AmountInTransactionCurrency` ใน VDM เป็น **signed** (บวก = เดบิต, ลบ = เครดิต)
-  ผลรวมต้อง = 0 เท่านั้นถึงจะ full clear ได้
-- ถ้า `ClearingAccountingDocument` ไม่ว่าง = ถูก clear ไปแล้ว ใช้ไม่ได้
-- ถ้า `SpecialGLCode` ไม่ว่าง = ข้ามไป API ไม่รองรับ
+- `AmountInTransactionCurrency` เป็นค่า **signed** (บวก = เดบิต, ลบ = เครดิต)
+  ผลรวมของบรรทัดที่ส่งเข้า API ต้อง = 0 ถึงจะ full clear ได้
+- `ClearingAccountingDocument` ไม่ว่าง = ถูก clear ไปแล้ว ใช้ไม่ได้
+- `SpecialGLCode` ไม่ว่าง = ข้ามไป API ไม่รองรับ
+- `IsOpenItemManaged` ต้องเป็น `'X'` ไม่งั้นจะได้ error
+  *"There are no open items managed in Account"*
 - item ที่ `TransactionCurrency` ต่างกัน อย่าเอามาปนใน request เดียว
