@@ -128,6 +128,38 @@ CLASS ycl_clearing IMPLEMENTATION.
 
   METHOD if_oo_adt_classrun~main.
 
+    "----------------------------------------------------------
+    " เก็บไว้ reuse — query ตรวจ open item ก่อนยิง (Q12 ใน docs/06)
+    " ใช้ยืนยันว่าบรรทัดที่จะ clear ยัง open อยู่จริง ยอดรวม = 0
+    " และ ClearingAccountingDocument ยังว่าง
+    "----------------------------------------------------------
+*    SELECT CompanyCode,
+*           FinancialAccountType,
+*           Customer,
+*           Supplier,
+*           GLAccount,
+*           FiscalYear,
+*           AccountingDocument,
+*           AccountingDocumentItem,
+*           PostingKey,
+*           DebitCreditCode,
+*           TransactionCurrency,
+*           AmountInTransactionCurrency,
+*           PostingDate,
+*           DocumentDate,
+*           AccountingDocumentType,
+*           SpecialGLCode,
+*           IsOpenItemManaged,
+*           ClearingAccountingDocument,
+*           ClearingDate,
+*           AssignmentReference,
+*           DocumentItemText
+*      FROM I_OperationalAcctgDocItem
+*      WHERE CompanyCode        = '1000'
+*        AND AccountingDocument IN ( '9400000005', '3300000017' )
+*      ORDER BY AccountingDocument, AccountingDocumentItem
+*      INTO TABLE @DATA(lt_case).
+
     "1) set message id
     TRY.
         DATA(lv_uuid32)     = cl_system_uuid=>create_uuid_c32_static( ).
@@ -390,6 +422,13 @@ ENDCLASS.
 | HTTP 202 แต่ Message Dashboard ขึ้นแดง | payload ถูกรับแล้วแต่ business error เช่น ยอดไม่ balance / period ปิด / item ถูก clear ไปแล้ว |
 | *There are no open items managed in Account* | บัญชี G/L ไม่ได้เปิด open item management |
 | ไม่เห็น message ใน dashboard เลย | Message ID ซ้ำกับที่เคยส่ง → ถูกมองเป็น duplicate |
+
+## หมายเหตุ
+
+`main( )` มี SELECT `I_OperationalAcctgDocItem` comment ไว้ต้นเมธอด — เป็น Q12
+จาก [06](06-data-export-sql.md) เก็บไว้ reuse ตอนไปทำงานจริง ใช้ตรวจก่อนยิงว่า
+บรรทัดที่จะ clear ยัง open อยู่ ยอดรวม = 0 และ `ClearingAccountingDocument` ว่าง
+**ไม่ได้เป็นส่วนหนึ่งของ flow** — uncomment เมื่อต้องการเท่านั้น
 
 ## Watch list ตอนยิงจริงครั้งแรก
 
