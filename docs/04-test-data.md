@@ -1,6 +1,6 @@
 # 04 — Test Data ที่ต้อง export จากระบบ
 
-ค่าทั้งหมดใน `YCL_CLEARING_RUNNER` ที่เขียนว่า `CHANGE_ME...` ต้องแทนด้วยค่าจริง
+ค่าทั้งหมดใน `YCL_CLEARING` ที่เขียนว่า `CHANGE_ME...` ต้องแทนด้วยค่าจริง
 จาก tenant ก่อนรัน
 
 ## 1. ค่าระดับ header

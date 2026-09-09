@@ -18,7 +18,7 @@ POC เรียก SOAP API `JournalEntryBulkClearingRequest_In`
 | Object | ชื่อ |
 |---|---|
 | Package | `YPOC_CLEARING` |
-| Console class | `YCL_CLEARING_RUNNER` |
+| Console class | `YCL_CLEARING` |
 | Communication scenario | `ZCS_SPORTPACKAGE_CLEARING` |
 | Outbound service | `ZAPI_SPORTPACKAGE_CLEARING_REST` |
 
@@ -30,7 +30,7 @@ POC เรียก SOAP API `JournalEntryBulkClearingRequest_In`
 > ไม่ได้ถูกทิ้งไปพร้อม POC เหมือน object อื่น จึงตั้งชื่อตามระบบงานจริง
 > (`SPORTPACKAGE`) ตั้งแต่แรก
 >
-> ที่เหลือ (package `YPOC_CLEARING`, class `YCL_CLEARING_RUNNER`) ยังเป็น `Y`
+> ที่เหลือ (package `YPOC_CLEARING`, class `YCL_CLEARING`) ยังเป็น `Y`
 > ตามเดิม เพราะเป็นของ POC ล้วน
 
 prefix ตัวแปรตาม global rules (`gc_` / `lv_` / `lo_` / `ls_` / `lt_` / `iv_` / `rv_` …)

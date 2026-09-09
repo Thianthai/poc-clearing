@@ -1,4 +1,4 @@
-# 05 — Console Class `YCL_CLEARING_RUNNER`
+# 05 — Console Class `YCL_CLEARING`
 
 > **snapshot เพื่ออ่านอย่างเดียว** — source of truth คือ object บน tenant
 > ผู้ใช้เป็นคน copy code นี้ไปสร้างใน ADT แล้ว push ผ่าน abapGit เอง
@@ -15,7 +15,7 @@ class ยังตั้ง `gc_dry_run = abap_true` ไว้ → รันด�
 
 ## วิธีใช้
 
-1. ADT → package `YPOC_CLEARING` → New → ABAP Class → `YCL_CLEARING_RUNNER`
+1. ADT → package `YPOC_CLEARING` → New → ABAP Class → `YCL_CLEARING`
 2. วาง code ข้างล่างทับทั้งหมด → activate → **F9** (Run as Console Application)
 3. ได้ test data มาแล้ว → uncomment `get_gl_items( )` หรือ `get_apar_items( )`
    แล้วเติมค่าจริง
@@ -50,7 +50,7 @@ class ยังตั้ง `gc_dry_run = abap_true` ไว้ → รันด�
 ## Source
 
 ```abap
-CLASS ycl_clearing_runner DEFINITION
+CLASS ycl_clearing DEFINITION
   PUBLIC FINAL
   CREATE PUBLIC.
 
@@ -60,7 +60,7 @@ CLASS ycl_clearing_runner DEFINITION
   PRIVATE SECTION.
 
     TYPES:
-      "! open item ฝั่ง customer / vendor ที่จะ clear
+      "! customer/vendor open item
       BEGIN OF ty_apar_item,
         ref_doc_item    TYPE i,
         company_code    TYPE string,
@@ -76,7 +76,7 @@ CLASS ycl_clearing_runner DEFINITION
       END OF ty_apar_item,
       tt_apar_item TYPE STANDARD TABLE OF ty_apar_item WITH EMPTY KEY,
 
-      "! open item ฝั่ง G/L ที่จะ clear
+      "! g/l open item
       BEGIN OF ty_gl_item,
         ref_doc_item   TYPE i,
         company_code   TYPE string,
@@ -88,20 +88,14 @@ CLASS ycl_clearing_runner DEFINITION
       tt_gl_item TYPE STANDARD TABLE OF ty_gl_item WITH EMPTY KEY.
 
     "--- destination (ดู docs/02-communication-setup.md) ---
-    CONSTANTS gc_comm_scenario TYPE char30 VALUE 'ZCS_SPORTPACKAGE_CLEARING'.
-    "! ต้องตรงกับคอลัมน์ Outbound Service ID ใน ADT เป๊ะ (ADT เติม _REST ให้เอง)
-    CONSTANTS gc_service_id    TYPE char40 VALUE 'ZAPI_SPORTPACKAGE_CLEARING_REST'.
-    CONSTANTS gc_soap_action   TYPE string
-      VALUE 'http://sap.com/xi/SAPSCORE/SFIN/JournalEntryBulkClearingRequest_In/JournalEntryBulkClearingRequest_InRequest'.
+    "ต้องรันจาก client เดียวกับที่สร้าง communication arrangement ไว้
+    CONSTANTS gc_comm_scenario TYPE c LENGTH 30 VALUE 'ZCS_SPORTPACKAGE_CLEARING'.
+    CONSTANTS gc_service_id    TYPE c LENGTH 40 VALUE 'ZAPI_SPORTPACKAGE_CLEARING_REST'.
+    CONSTANTS gc_soap_action   TYPE string VALUE 'http://sap.com/xi/SAPSCORE/SFIN/JournalEntryBulkClearingRequest_In/JournalEntryBulkClearingRequest_InRequest'.
 
-    "--- โหมดการรัน ---
-    "gc_dry_run  = X  → ประกอบ payload แล้วพิมพ์ออกจอเฉย ๆ ไม่ยิงจริง
-    "                   ใช้ตอนยังไม่มี comm arrangement / ยังไม่มี test data
-    "gc_test_run = true → ยิงจริงแต่ให้ SAP simulate ไม่ post เอกสาร
-    CONSTANTS gc_dry_run  TYPE abap_bool     VALUE abap_true.
-    CONSTANTS gc_test_run TYPE string       VALUE 'true'.
+    CONSTANTS gc_dry_run  TYPE abap_bool VALUE abap_false.
+    CONSTANTS gc_test_run TYPE string    VALUE 'true'. "ยิงจริงแต่ให้ SAP simulate ไม่ post เอกสาร
 
-    "--- ข้อมูลทดสอบระดับ header ---
     CONSTANTS gc_company_code  TYPE string VALUE '1000'.
     CONSTANTS gc_document_type TYPE string VALUE 'AB'.
     CONSTANTS gc_currency      TYPE string VALUE 'THB'.
@@ -130,11 +124,11 @@ CLASS ycl_clearing_runner DEFINITION
 ENDCLASS.
 
 
-CLASS ycl_clearing_runner IMPLEMENTATION.
+CLASS ycl_clearing IMPLEMENTATION.
 
   METHOD if_oo_adt_classrun~main.
 
-    "1) Message ID ต้อง unique และสั้นกว่า 35 ตัวอักษร
+    "1) set message id
     TRY.
         DATA(lv_uuid32)     = cl_system_uuid=>create_uuid_c32_static( ).
         DATA(lv_message_id) = |POC_{ lv_uuid32+0(24) }|.
@@ -144,7 +138,7 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
         RETURN.
     ENDTRY.
 
-    "2) เช็คว่ามี item ให้ clear จริงไหม
+    "2) check clearing item
     DATA(lv_item_count) = lines( get_gl_items( ) ) + lines( get_apar_items( ) ).
 
     out->write( |Message ID  : { lv_message_id }| ).
@@ -158,14 +152,14 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    "3) ประกอบ payload
+    "3) build payload
     DATA(lv_payload) = build_envelope( iv_message_id     = lv_message_id
                                        iv_wsa_message_id = lv_wsa_msg_id ).
 
     out->write( `----- SOAP request -----` ).
     out->write( lv_payload ).
 
-    "4) ยิงจริง (ข้ามถ้าอยู่ในโหมด dry run)
+    "4) call api
     IF gc_dry_run = abap_true.
       out->write( `DRY RUN — ยังไม่ได้ยิงออกไป ตั้ง gc_dry_run = abap_false เมื่อพร้อม` ).
       RETURN.
@@ -229,7 +223,7 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
 
   METHOD build_envelope.
 
-    "วันที่เอกสาร / วันที่ผ่านรายการ = วันนี้ (แก้เป็นค่า fix ได้ที่นี่)
+    "วันที่เอกสาร/วันที่ผ่านรายการ
     DATA(lv_doc_date) = |{ cl_abap_context_info=>get_system_date( ) DATE = ISO }|.
 
     DATA lv_utc_date TYPE d.
@@ -328,14 +322,13 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
 
   METHOD get_apar_items.
 
-    "==========================================================
-    " Test case จาก functional (2026-09-09) — เคส AR full clearing
-    "   SO JA30000116 > billing JA70000046
-    "   invoice 9400000005/2026 item 001 : +6,418.93  (PK 01)
-    "   payment 3300000017/2026 item 005 : -6,418.93  (PK 15)
-    "   customer 0001000082 · THB · รวมกัน = 0.00 พอดี
-    " ระวัง: เอกสารเลขเดียวกันมีใน FY2025 ด้วย ต้องระบุ fiscal_year เสมอ
-    "==========================================================
+    " Test case: AR full clearing
+    "   ทุกบรรทัดต้องเป็น open item จริง ยอดรวม (signed) = 0
+    "   SpecialGLCode ต้องว่าง (API ไม่รองรับ special G/L)
+    " SO JA30000116 > billing JA70000046
+    " invoice 9400000005/2026 item 001 : +6,418.93  (PK 01)
+    " payment 3300000017/2026 item 005 : -6,418.93  (PK 15)
+    " customer 0001000082 - THB - รวมกัน = 0.00 พอดี
     rt_items = VALUE #(
       company_code = gc_company_code
       account_type = 'D'
@@ -353,10 +346,8 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
 
   METHOD get_gl_items.
 
-    "==========================================================
-    " เคส G/L — รอ test data จาก functional
+    " Test case: G/L
     " บัญชีต้อง IsOpenItemManaged = 'X'
-    "==========================================================
 *    rt_items = VALUE #(
 *      company_code = gc_company_code
 *      ( ref_doc_item   = 1
@@ -369,8 +360,6 @@ CLASS ycl_clearing_runner IMPLEMENTATION.
 *        fiscal_year    = 'CHANGE_ME_YEAR'
 *        acctg_doc      = 'CHANGE_ME_DOC2'
 *        acctg_doc_item = '1' ) ).
-
-    "เคสปัจจุบันเป็น AR → ฝั่ง G/L ต้องว่าง ห้าม uncomment block ข้างบน
 
   ENDMETHOD.
 

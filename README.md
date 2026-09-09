@@ -21,7 +21,7 @@ POC นี้จึงทำตัวเป็น external client: ประก�
 (ไม่ hardcode รหัสผ่านใน code)
 
 ```
-YCL_CLEARING_RUNNER  ──POST──▶  https://<host>-api.s4hana.cloud.sap
+YCL_CLEARING  ──POST──▶  https://<host>-api.s4hana.cloud.sap
  (console class)                /sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques
         │                                        │
         │ comm arrangement ZCS_SPORTPACKAGE_CLEARING          ▼

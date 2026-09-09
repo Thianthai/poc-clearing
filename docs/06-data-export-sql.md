@@ -76,7 +76,7 @@ company code ที่ใช้อยู่คือ `'1000'`
 2. **ให้ functional เตรียม test data ให้** ← เลือกทางนี้ ชัดเจนกว่า
    คุมได้ว่าเอกสารไหนคู่กับไหน
 
-ระหว่างรอ data → `YCL_CLEARING_RUNNER` ตั้ง `gc_dry_run = abap_true`
+ระหว่างรอ data → `YCL_CLEARING` ตั้ง `gc_dry_run = abap_true`
 รันดู payload ได้เลยโดยไม่ต้องมี data
 
 ---
