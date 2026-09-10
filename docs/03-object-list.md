@@ -70,3 +70,13 @@ payload หรือมาจาก destination
 | ~~destination + auth~~ | ✅ ping ผ่านแล้ว |
 | ~~endpoint / SOAPAction~~ | ✅ HTTP 202 |
 | ~~business logic ของ clearing~~ | ✅ clear สำเร็จจริง |
+
+## งานที่ยังค้าง (2026-09-10)
+
+| # | เรื่อง | สถานะ |
+|---|---|---|
+| 1 | ยืนยัน `HTTP Version` ของ outbound service เป็น 1.1 | 🔍 เช็คที่ ADT → `ZCS_SPORTPACKAGE_CLEARING` → tab Outbound → REST Service Settings |
+| 2 | AIF recipient assignment (ให้ Message Dashboard มองเห็น message) | ⏸️ พักไว้ก่อน — ต้องทำถ้าจะเอาไป production |
+| 3 | ~~ทดสอบ partial / residual clearing~~ | ❌ **ปิด** — ไม่อยู่ใน scope ของ POC นี้ |
+
+POC ปิดเคสแล้ว งานที่เหลือเป็นเรื่องของการเอาไปใช้งานจริง ไม่ใช่เงื่อนไขของ POC

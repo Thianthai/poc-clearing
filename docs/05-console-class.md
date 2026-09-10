@@ -6,9 +6,10 @@
 >
 > ✅ verify แล้วเมื่อ 2026-09-10 — หน้านี้ตรงกับ `src/` ทุกบรรทัด
 
-> ⚠️ **partial / residual clearing** — field `partial_amount` /
-> `cash_discount` / `other_deduction` / `diff_reason` กับ block ที่ emit
-> node เหล่านั้นถูก comment ไว้ ถ้าจะใช้ต้อง uncomment **ทั้งสองที่ให้ครบคู่**
+> **partial / residual clearing — ไม่อยู่ใน scope ของ POC นี้**
+> field `partial_amount` / `cash_discount` / `other_deduction` /
+> `diff_reason` กับ block ที่ emit node เหล่านั้น comment ไว้ในไฟล์
+> ถ้าวันหนึ่งจะใช้ ต้อง uncomment **ทั้งสองที่ให้ครบคู่**
 > (`ty_apar_item` ใน PRIVATE SECTION + loop ใน `build_items_xml( )`)
 
 ## สถานะ: มี test data จริงแล้ว (AR full clearing)

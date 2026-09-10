@@ -64,7 +64,8 @@ zero-balance clearing ที่ document splitting สร้างเอง ซ�
   communication arrangement โดยไม่ต้อง hardcode credential
 - ประกอบ SOAP envelope + WS-Addressing header เองด้วย string template ใช้งานได้จริง
   ไม่ต้องมี consumer proxy
-- รองรับ **full clearing** · โครงสร้างสำหรับ partial / residual มีอยู่ในไฟล์แต่ comment ไว้ ยังไม่ได้ทดสอบ
+- รองรับ **full clearing** — เป็น scope ของ POC นี้ · โครงสร้างสำหรับ
+  partial / residual comment ไว้ในไฟล์ ไม่ได้ทดสอบและไม่อยู่ใน scope
 - **ใส่ `GLItems` กับ `APARItems` ปนกันใน `JournalEntry` เดียวได้** — ได้ clearing
   document ใบเดียวคลุมทั้ง AR และ deferred output tax
   (payload ตัวอย่างของ SAP ไม่เคยแสดงเคสนี้ แต่ทดสอบแล้วใช้ได้จริง)
