@@ -87,7 +87,7 @@ abapGit serialize ด้วย `FOLDER_LOGIC = FULL` · `STARTING_FOLDER = /src/
 | [`src/zapi_sportpackage_clearing_rest.sco3.xml`](src/zapi_sportpackage_clearing_rest.sco3.xml) | outbound service |
 | [`src/package.devc.xml`](src/package.devc.xml) | package `YPOC_CLEARING` |
 
-> `gc_test_run` บน tenant ตั้งเป็น `'false'` — กด F9 แล้ว **post จริง**
+> `gc_test_run` ตั้งเป็น `'true'` (simulate) — เปลี่ยนเป็น `'false'` เมื่อจะ post จริง
 
 ## เอกสาร
 

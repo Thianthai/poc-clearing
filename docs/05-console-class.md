@@ -2,15 +2,15 @@
 
 > **snapshot เพื่ออ่านอย่างเดียว** — source of truth คือ
 > [`src/ycl_clearing.clas.abap`](../src/ycl_clearing.clas.abap) ที่ abapGit
-> serialize ขึ้นมาจาก tenant · หน้านี้ sync กับไฟล์นั้นเมื่อ 2026-09-10
+> serialize ขึ้นมาจาก tenant
+>
+> ⏳ หน้านี้เป็นเวอร์ชันที่ตกลงกันไว้เมื่อ 2026-09-10 **รออัปเดตบน tenant
+> แล้ว push ทับ** — ระหว่างนี้ `src/` ยังเป็นของเดิม
 
-> ⚠️ **`gc_test_run = 'false'`** — กด F9 แล้ว **post เอกสารจริงทันที**
-> ถ้าจะแค่เปิดดูให้เปลี่ยนเป็น `'true'` (simulate) ก่อน
-
-> ⚠️ เวอร์ชันนี้ **ไม่รองรับ partial / residual clearing** แล้ว — field
-> `partial_amount` / `cash_discount` / `other_deduction` / `diff_reason`
-> กับ block ที่ emit node เหล่านั้นถูก comment ไว้ในไฟล์ ถ้าจะใช้ต้อง
-> uncomment ทั้งสองที่ให้ครบคู่
+> ⚠️ **partial / residual clearing** — field `partial_amount` /
+> `cash_discount` / `other_deduction` / `diff_reason` กับ block ที่ emit
+> node เหล่านั้นถูก comment ไว้ ถ้าจะใช้ต้อง uncomment **ทั้งสองที่ให้ครบคู่**
+> (`ty_apar_item` ใน PRIVATE SECTION + loop ใน `build_items_xml( )`)
 
 ## สถานะ: มี test data จริงแล้ว (AR full clearing)
 
@@ -68,6 +68,8 @@ CLASS ycl_clearing DEFINITION
   PRIVATE SECTION.
 
     TYPES:
+*      "! เวอร์ชันเต็ม — รองรับ partial / residual clearing
+*      "! ถ้าจะใช้ ต้อง uncomment คู่กับ block ใน build_items_xml( ) ด้วย
 *      "! customer/vendor open item
 *      BEGIN OF ty_apar_item,
 *        ref_doc_item    TYPE i,
@@ -84,7 +86,7 @@ CLASS ycl_clearing DEFINITION
 *      END OF ty_apar_item,
 *      tt_apar_item TYPE STANDARD TABLE OF ty_apar_item WITH EMPTY KEY,
 
-      "! customer/vendor open item
+      "! customer/vendor open item — เวอร์ชันใช้งาน รองรับ full clearing เท่านั้น
       BEGIN OF ty_apar_item,
         ref_doc_item   TYPE i,
         company_code   TYPE string,
@@ -107,15 +109,19 @@ CLASS ycl_clearing DEFINITION
       END OF ty_gl_item,
       tt_gl_item TYPE STANDARD TABLE OF ty_gl_item WITH EMPTY KEY.
 
-    "--- destination ---
+    "--- destination (ดู docs/02-communication-setup.md) ---
+    "ต้องรันจาก client เดียวกับที่สร้าง communication arrangement ไว้
     CONSTANTS gc_comm_scenario TYPE c LENGTH 30 VALUE 'ZCS_SPORTPACKAGE_CLEARING'.
     CONSTANTS gc_service_id    TYPE c LENGTH 40 VALUE 'ZAPI_SPORTPACKAGE_CLEARING_REST'.
     CONSTANTS gc_soap_action   TYPE string VALUE 'http://sap.com/xi/SAPSCORE/SFIN/JournalEntryBulkClearingRequest_In/JournalEntryBulkClearingRequest_InRequest'.
 
     CONSTANTS gc_dry_run  TYPE abap_bool VALUE abap_false.
-    CONSTANTS gc_test_run TYPE string    VALUE 'false'. "ยิงจริงแต่ให้ SAP simulate ไม่ post เอกสาร
+    CONSTANTS gc_test_run TYPE string    VALUE 'true'. "ยิงจริงแต่ให้ SAP simulate ไม่ post เอกสาร
 
     CONSTANTS gc_company_code  TYPE string VALUE '1000'.
+    "! DA = Customer Document — functional กำหนด (2026-09-10)
+    "! เดิมใช้ AB · ทดสอบแล้วทั้งสองแบบให้ผลเหมือนกัน document type
+    "! ไม่มีผลกับบรรทัด zero-balance ที่ document splitting สร้าง
     CONSTANTS gc_document_type TYPE string VALUE 'DA'.
     CONSTANTS gc_currency      TYPE string VALUE 'THB'.
     CONSTANTS gc_header_text   TYPE string VALUE 'POC Clearing via SOAP'.
@@ -151,7 +157,7 @@ CLASS ycl_clearing IMPLEMENTATION.
   METHOD if_oo_adt_classrun~main.
 
     "----------------------------------------------------------
-    " เก็บไว้ reuse — query ตรวจ open item ก่อนยิง
+    " เก็บไว้ reuse — query ตรวจ open item ก่อนยิง (Q12 ใน docs/06)
     " ใช้ยืนยันว่าบรรทัดที่จะ clear ยัง open อยู่จริง ยอดรวม = 0
     " และ ClearingAccountingDocument ยังว่าง
     "----------------------------------------------------------
@@ -263,6 +269,9 @@ CLASS ycl_clearing IMPLEMENTATION.
 
       CATCH cx_http_dest_provider_error INTO DATA(lx_dest).
         io_out->write( |ERROR (destination): { lx_dest->get_text( ) }| ).
+        io_out->write( `หา comm arrangement ไม่เจอ — เช็ค 2 อย่าง` ).
+        io_out->write( `1) รันอยู่ client เดียวกับที่สร้าง arrangement ไหม (arrangement ผูกกับ client)` ).
+        io_out->write( `2) gc_service_id ตรงกับคอลัมน์ Outbound Service ID ใน ADT ไหม` ).
 
       CATCH cx_web_http_client_error
             cx_web_message_error INTO DATA(lx_error).
@@ -352,6 +361,8 @@ CLASS ycl_clearing IMPLEMENTATION.
         |          </APARItems>\n|.
     ENDLOOP.
 
+*    " เวอร์ชันเต็ม — emit node ของ partial / residual clearing ด้วย
+*    " ใช้คู่กับ ty_apar_item เวอร์ชันเต็มใน PRIVATE SECTION
 *    DATA(lt_gl) = get_gl_items( ).
 *    LOOP AT lt_gl INTO DATA(ls_gl).
 *      rv_xml = rv_xml &&
@@ -404,6 +415,7 @@ CLASS ycl_clearing IMPLEMENTATION.
     " invoice 9400000005/2026 item 001 : +6,418.93  (PK 01)
     " payment 3300000017/2026 item 005 : -6,418.93  (PK 15)
     " customer 0001000082 - THB - รวมกัน = 0.00 พอดี
+    " ReferenceDocumentItem ต่อจาก GLItems (1-2) จึงเริ่มที่ 3
     rt_items = VALUE #(
       company_code = gc_company_code
       account_type = 'D'
