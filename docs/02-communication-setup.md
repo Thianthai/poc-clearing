@@ -132,8 +132,9 @@ Cloud Communication Management → **Outbound Service**
 | Service Type | **HTTP** |
 | Default Path Prefix | `/sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques` |
 
-ในส่วน **REST Service Settings** → เปลี่ยน **HTTP Version** เป็น **HTTP 1.1**
-(default ที่ ADT ให้มาคือ 1.0 ซึ่งไม่รองรับ persistent connection / chunked transfer)
+> editor ของ Outbound Service มีแค่ **Service Type** กับ **Default Path Prefix**
+> เท่านั้น · ส่วน HTTP Version / Port / Supports Ping ตั้งที่ **Communication
+> Scenario → tab Outbound** (ดูหัวข้อถัดไป)
 
 > **ตัด `?sap-client=100` ออก** เอาเฉพาะ path — query string ใส่ตรงนี้ไม่ได้
 
@@ -158,7 +159,13 @@ ADT → New → **Communication Scenario**
 - Scope Dependent → **ไม่ต้องติ๊ก**
 - แท็บ **Outbound** → Add → `ZAPI_SPORTPACKAGE_CLEARING_REST`
 - Supported Authentication Methods → ติ๊ก **User Name and Password**
+- ในกล่อง **Outbound Service** ด้านล่าง → **REST Service Settings** →
+  ตั้ง **HTTP Version = 1.1** (ADT default ให้มา 1.0 ซึ่งไม่รองรับ
+  persistent connection / chunked transfer)
 - Save → **Activate** → **Publish Locally**
+
+> ค่าพวกนี้ serialize ลง `.sco1.xml` ของ comm scenario ไม่ใช่ `.sco3.xml`
+> ของ outbound service · `<HTTP_VERSION>1</HTTP_VERSION>` = **HTTP 1.1**
 
 > ถ้าไม่ publish จะไม่เห็น scenario นี้ตอนสร้าง arrangement ใน C4
 

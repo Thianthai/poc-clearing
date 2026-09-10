@@ -76,7 +76,11 @@ prefix ตัวแปรตาม global rules (`gc_` / `lv_` / `lo_` / `ls_` /
 - ADT เติม suffix **`_REST`** ให้ outbound service แบบ HTTP อัตโนมัติ
   → ชื่อจริงคือ `ZAPI_SPORTPACKAGE_CLEARING_REST` ไม่ใช่ `ZAPI_SPORTPACKAGE_CLEARING`
   `gc_service_id` ต้องตรงกับชื่อจริง ไม่งั้น `CX_HTTP_DEST_PROVIDER_ERROR`
-- Outbound service ตั้ง **HTTP Version = 1.1** (ADT default ให้มา 1.0)
+- **HTTP Version / Port / Supports Ping ตั้งที่ Communication Scenario**
+  (tab Outbound → REST Service Settings) ไม่ใช่ที่ editor ของ Outbound Service
+  ซึ่งมีแค่ Service Type กับ Default Path Prefix
+  → serialize ลง `.sco1.xml` · `<HTTP_VERSION>1</HTTP_VERSION>` = **HTTP 1.1**
+  (ADT default ให้มา 1.0 ควรเปลี่ยนเป็น 1.1)
 - `ERROR: The selection did not return any results.` จาก
   `CX_HTTP_DEST_PROVIDER_ERROR` = หา comm arrangement ไม่เจอ
   **ยังไม่ได้ยิงออกไปเลย** ไม่ใช่ปัญหา payload — เช็ค `gc_service_id`

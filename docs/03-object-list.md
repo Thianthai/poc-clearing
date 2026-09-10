@@ -75,8 +75,9 @@ payload หรือมาจาก destination
 
 | # | เรื่อง | สถานะ |
 |---|---|---|
-| 1 | ยืนยัน `HTTP Version` ของ outbound service เป็น 1.1 | 🔍 เช็คที่ ADT → `ZCS_SPORTPACKAGE_CLEARING` → tab Outbound → REST Service Settings |
+| 1 | ~~ยืนยัน `HTTP Version`~~ | ✅ **ปิด** — ตั้งเป็น 1.1 ตั้งแต่ตอนสร้างแล้ว (`<HTTP_VERSION>1</HTTP_VERSION>` = 1.1) |
 | 2 | AIF recipient assignment (ให้ Message Dashboard มองเห็น message) | ⏸️ พักไว้ก่อน — ต้องทำถ้าจะเอาไป production |
 | 3 | ~~ทดสอบ partial / residual clearing~~ | ❌ **ปิด** — ไม่อยู่ใน scope ของ POC นี้ |
 
-POC ปิดเคสแล้ว งานที่เหลือเป็นเรื่องของการเอาไปใช้งานจริง ไม่ใช่เงื่อนไขของ POC
+**POC ปิดครบทุกข้อแล้ว** เหลือเฉพาะข้อ 2 ซึ่งเป็นเรื่องของการเอาไปใช้งานจริง
+ไม่ใช่เงื่อนไขของ POC
