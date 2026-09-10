@@ -68,9 +68,12 @@ prefix ตัวแปรตาม global rules (`gc_` / `lv_` / `lo_` / `ls_` /
   คู่ไปด้วยเสมอ ไม่งั้น functional ตีกลับว่า clearing ไม่สมบูรณ์
 - **บรรทัดที่ `AccountingDocumentItem = 000`** ใน `I_JournalEntryItem` คือบรรทัดที่
   document splitting สร้างเอง (มีแต่ใน ACDOCA ไม่มีใน BSEG) ไม่ได้มาจาก payload
-  → ถ้าเจอ zero-balance clearing account โผล่มา ให้ดูว่า profit center
-  สองฝั่งของ clearing ตรงกันไหม และ document type ถูก classify ใน
-  document splitting เป็น business transaction อะไร (`AB` ≠ `DZ`)
+  → ถ้าเจอ zero-balance clearing account โผล่มา ให้ดูว่า **profit center
+  สองฝั่งของ clearing ตรงกันไหม** — clearing line inherit PC จาก open item
+  ต้นทาง ถ้าคนละ PC splitting จะเติมบรรทัด zero-balance เสมอ
+  ไม่ว่า clear ด้วย API หรือ standard app · **document type ไม่เกี่ยว**
+  (ทดสอบ `AB` กับ `DA` แล้วได้ผลเหมือนกันเป๊ะ 2026-09-10)
+  → แก้จาก code ไม่ได้ ต้องไปแก้ profit center derivation ที่เอกสารต้นทาง
 - ADT เติม suffix **`_REST`** ให้ outbound service แบบ HTTP อัตโนมัติ
   → ชื่อจริงคือ `ZAPI_SPORTPACKAGE_CLEARING_REST` ไม่ใช่ `ZAPI_SPORTPACKAGE_CLEARING`
   `gc_service_id` ต้องตรงกับชื่อจริง ไม่งั้น `CX_HTTP_DEST_PROVIDER_ERROR`

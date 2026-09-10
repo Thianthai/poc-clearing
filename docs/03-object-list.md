@@ -54,7 +54,8 @@ payload หรือมาจาก destination
 | 2026-09-09 | เพิ่ม `get_gl_items( )` = G/L `0021082005` ทั้ง 2 ใบ + reverse `0100000000` | ✅ |
 | 2026-09-09 10:46 UTC | **ยิง post จริงครบ 4 บรรทัด** | ✅ clearing document `0100000002` · พิสูจน์ว่าใส่ `GLItems` + `APARItems` ปนกันใน `JournalEntry` เดียวได้ |
 | 2026-09-09 | functional ตรวจ `0100000002` | ⚠️ มีบรรทัด zero-balance clearing `0012990002` ±5,999.00 ที่ standard app ไม่มี — เกิดจาก document splitting เพราะ profit center สองฝั่งไม่ตรงกัน |
-| 2026-09-10 | functional สั่งเปลี่ยน document type `AB` → **`DA`** | 🔜 reverse `0100000002` แล้วยิงใหม่ |
+| 2026-09-10 | เปลี่ยน document type `AB` → `DA` แล้วยิงใหม่ | ⚠️ ได้เอกสาร `3000000003` แต่ `0012990002` ยังอยู่ — **document type ไม่ใช่ต้นเหตุ** |
+| 2026-09-10 | สรุปต้นเหตุ | profit center ของ invoice (`DUMMY`) กับ payment (`0000010002`) ไม่ตรงกัน → document splitting เติม zero-balance เสมอ · **แก้จาก code ไม่ได้** ต้องแก้ derivation ฝั่ง billing |
 
 ### ยังพิสูจน์ไม่ได้ (รออะไรอยู่)
 

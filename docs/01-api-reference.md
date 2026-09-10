@@ -229,10 +229,32 @@ JournalEntryBulkClearingRequest
 | 2 | invoice ต้นทางมี profit center = `DUMMY` (master data derivation ไม่ครบ) | ❌ ต้องแก้ที่ต้นทาง |
 | 3 | baseline ที่เอาไปเทียบเป็นคนละคู่เอกสาร | ❌ ต้องยืนยันกับ functional |
 
-### ทางแก้ที่ functional กำหนด (2026-09-10)
+### ทดสอบด้วย `DA` แล้ว — **ไม่ได้แก้** (2026-09-10)
 
-reverse `0100000002` แล้วยิงใหม่ด้วย **`DA` (Customer Document)** แทน `AB`
+reverse `0100000002` แล้วยิงใหม่ด้วย `DA` ได้เอกสาร `3000000003`
+(number range คนละชุด ยืนยันว่า `DA` ถูกใช้จริง) แต่บรรทัด `0012990002`
+±5,999.00 ยังอยู่เหมือนเดิมทุกประการ
 
-`DA` เป็น document type ฝั่งลูกหนี้ ถูก classify ใน document splitting เป็น
-business transaction ที่ inherit profit center จาก open item ต้นทางได้ถูกต้อง
-ต่างจาก `AB` ที่เป็น unspecified posting
+→ **ตัดสมมติฐาน "document type" ทิ้งได้**
+
+### ข้อสรุป — ต้นเหตุอยู่ที่เอกสารต้นทาง
+
+| ฝั่ง | เอกสาร | Profit Center |
+|---|---|---|
+| invoice | `9400000005` | `DUMMY` |
+| payment | `3300000017` | `0000010002` |
+
+clearing line **inherit** profit center จาก open item ที่ถูก clear
+พอสองฝั่งเป็นคนละ PC document splitting ก็ต้องเติมบรรทัด zero-balance
+เสมอ ไม่ว่าจะ clear ด้วย API หรือ standard app
+
+API ไม่มี field ให้ระบุ profit center ของบรรทัด clearing (และไม่ควรมี
+เพราะต้อง inherit) → **แก้จาก code ไม่ได้**
+
+### สิ่งที่ต้องทำต่อ
+
+1. ให้ functional reverse `3000000003` แล้ว clear คู่เดิมด้วย **standard app**
+   → ถ้ามี `0012990002` เหมือนกัน = ไม่ใช่เรื่อง API เลย
+2. ไล่หาว่าทำไม invoice `9400000005` (จาก billing `JA70000046`) ถึงได้
+   profit center `DUMMY` — profit center derivation ฝั่ง SD/billing ไม่ครบ
+   ตัวนี้กระทบงบระดับ profit center ทั้งระบบ ไม่ใช่แค่เอกสาร clearing ใบนี้
