@@ -52,7 +52,9 @@ payload หรือมาจาก destination
 | 2026-09-09 10:00 UTC | **ยิง post จริง** (`TestDataIndicator = false`) | ✅ clear สำเร็จ เอกสาร `0100000000` — แต่**ยังไม่ครบ** |
 | 2026-09-09 | functional ตรวจ clearing doc | ⚠️ ขาดบรรทัด **Deferred Output Tax** (G/L `0021082005`) ต้อง clear คู่ไปด้วย |
 | 2026-09-09 | เพิ่ม `get_gl_items( )` = G/L `0021082005` ทั้ง 2 ใบ + reverse `0100000000` | ✅ |
-| 2026-09-09 10:46 UTC | **ยิง post จริงครบ 4 บรรทัด** | ✅ **POC สำเร็จสมบูรณ์** — clearing document `0100000002` · พิสูจน์ว่าใส่ `GLItems` + `APARItems` ปนกันใน `JournalEntry` เดียวได้ |
+| 2026-09-09 10:46 UTC | **ยิง post จริงครบ 4 บรรทัด** | ✅ clearing document `0100000002` · พิสูจน์ว่าใส่ `GLItems` + `APARItems` ปนกันใน `JournalEntry` เดียวได้ |
+| 2026-09-09 | functional ตรวจ `0100000002` | ⚠️ มีบรรทัด zero-balance clearing `0012990002` ±5,999.00 ที่ standard app ไม่มี — เกิดจาก document splitting เพราะ profit center สองฝั่งไม่ตรงกัน |
+| 2026-09-10 | functional สั่งเปลี่ยน document type `AB` → **`DA`** | 🔜 reverse `0100000002` แล้วยิงใหม่ |
 
 ### ยังพิสูจน์ไม่ได้ (รออะไรอยู่)
 

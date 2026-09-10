@@ -97,7 +97,9 @@ CLASS ycl_clearing DEFINITION
     CONSTANTS gc_test_run TYPE string    VALUE 'true'. "ยิงจริงแต่ให้ SAP simulate ไม่ post เอกสาร
 
     CONSTANTS gc_company_code  TYPE string VALUE '1000'.
-    CONSTANTS gc_document_type TYPE string VALUE 'AB'.
+    "! DA = Customer Document — functional กำหนด (2026-09-10)
+    "! เดิมใช้ AB แล้ว document splitting เติมบรรทัด zero-balance clearing เข้ามา
+    CONSTANTS gc_document_type TYPE string VALUE 'DA'.
     CONSTANTS gc_currency      TYPE string VALUE 'THB'.
     CONSTANTS gc_header_text   TYPE string VALUE 'POC Clearing via SOAP'.
     CONSTANTS gc_reference_doc TYPE string VALUE 'POC-CLEAR'.

@@ -229,7 +229,10 @@ JournalEntryBulkClearingRequest
 | 2 | invoice ต้นทางมี profit center = `DUMMY` (master data derivation ไม่ครบ) | ❌ ต้องแก้ที่ต้นทาง |
 | 3 | baseline ที่เอาไปเทียบเป็นคนละคู่เอกสาร | ❌ ต้องยืนยันกับ functional |
 
-### วิธีพิสูจน์
+### ทางแก้ที่ functional กำหนด (2026-09-10)
 
-reverse clearing document แล้วยิงใหม่ด้วย `gc_document_type = 'DZ'`
-ถ้าบรรทัด `0012990002` หายไป = เป็นเรื่อง document type classification
+reverse `0100000002` แล้วยิงใหม่ด้วย **`DA` (Customer Document)** แทน `AB`
+
+`DA` เป็น document type ฝั่งลูกหนี้ ถูก classify ใน document splitting เป็น
+business transaction ที่ inherit profit center จาก open item ต้นทางได้ถูกต้อง
+ต่างจาก `AB` ที่เป็น unspecified posting

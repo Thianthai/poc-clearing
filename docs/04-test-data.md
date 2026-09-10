@@ -8,7 +8,7 @@
 | Constant ใน class | ความหมาย | ค่าที่ต้องหา |
 |---|---|---|
 | `gc_company_code` | company code ที่จะ post เอกสาร clearing | เช่น `1010` |
-| `gc_document_type` | document type ของเอกสาร clearing | `AB` (G/L) · `DZ` (รับเงินลูกหนี้) · `KZ` (จ่ายเจ้าหนี้) |
+| `gc_document_type` | document type ของเอกสาร clearing | **`DA`** (customer document — ที่ใช้จริงในเคสนี้) · `AB` (G/L) · `KZ` (จ่ายเจ้าหนี้) |
 | `gc_currency` | สกุลเงินของเอกสาร | ต้องตรงกับสกุลเงินของ open item |
 | `gc_created_by` | ชื่อ user ที่จะติดไปกับเอกสาร | free text |
 | `gc_test_run` | `true` = simulate เฉย ๆ · `false` = post จริง | เริ่มที่ `true` เสมอ |
