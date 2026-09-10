@@ -195,10 +195,14 @@ JournalEntryBulkClearingRequest
 
 ## Document splitting กับ clearing document ที่ API สร้าง
 
-เจอตอนตรวจ clearing document `0100000002` (2026-09-09) — มีบรรทัด G/L
-`0012990002` โผล่มา 2 บรรทัด ±5,999.00 ซึ่งไม่มีตอน clear ด้วย standard app
+> **ข้อสรุป (2026-09-10): พฤติกรรมนี้ถูกต้องแล้ว** — functional ยืนยันหลังตรวจซ้ำ
+> ที่ตั้งข้อสงสัยตอนแรกว่าไม่ควรมีบรรทัด zero-balance เป็นความเข้าใจผิด
+> ส่วนนี้เก็บไว้เป็นความรู้ว่าบรรทัดพวกนี้มาจากไหน
 
-### บรรทัดพวกนี้ไม่ได้มาจาก payload
+clearing document ที่ API สร้างจะมีบรรทัดมากกว่าที่ส่งใน payload เช่น
+`3000000003` ส่ง 4 บรรทัดแต่ได้ 6 บรรทัดใน ACDOCA
+
+### บรรทัดส่วนเกินมาจาก document splitting
 
 | Ledger item | G/L | Amount | Profit Center | Partner PC | `AccountingDocumentItem` |
 |---|---|---:|---|---|---|
@@ -209,52 +213,27 @@ JournalEntryBulkClearingRequest
 **document splitting สร้างเอง** (Zero-Balance Clearing Account)
 จึงไม่โผล่ใน `I_OperationalAcctgDocItem` ตอนเช็คผล
 
-### ทำไมถึงเกิด
-
-| Profit Center | AR `0011030001` | Tax `0021082005` | รวม |
-|---|---:|---:|---:|
-| `DUMMY` (ฝั่ง invoice) | +6,418.93 | −419.93 | **+5,999.00** |
-| `0000010002` (ฝั่ง payment) | −6,418.93 | +419.93 | **−5,999.00** |
-
-เอกสาร balance โดยรวมแต่**ไม่ balance รายตัว profit center** — splitting เลยเติม
-บรรทัด zero-balance เข้ามา
-
-ต้นตอ: บรรทัดจาก invoice ถือ PC `DUMMY` ส่วนบรรทัดจาก payment ถือ `0000010002`
-
-### สาเหตุที่เป็นไปได้
-
-| # | สาเหตุ | ควบคุมได้จาก code |
-|---|---|---|
-| 1 | **document type `AB`** ถูก classify ใน document splitting เป็น business transaction คนละแบบกับ `DZ` ที่ standard app ใช้ | ✅ `gc_document_type` |
-| 2 | invoice ต้นทางมี profit center = `DUMMY` (master data derivation ไม่ครบ) | ❌ ต้องแก้ที่ต้นทาง |
-| 3 | baseline ที่เอาไปเทียบเป็นคนละคู่เอกสาร | ❌ ต้องยืนยันกับ functional |
-
-### ทดสอบด้วย `DA` แล้ว — **ไม่ได้แก้** (2026-09-10)
-
-reverse `0100000002` แล้วยิงใหม่ด้วย `DA` ได้เอกสาร `3000000003`
-(number range คนละชุด ยืนยันว่า `DA` ถูกใช้จริง) แต่บรรทัด `0012990002`
-±5,999.00 ยังอยู่เหมือนเดิมทุกประการ
-
-→ **ตัดสมมติฐาน "document type" ทิ้งได้**
-
-### ข้อสรุป — ต้นเหตุอยู่ที่เอกสารต้นทาง
-
-| ฝั่ง | เอกสาร | Profit Center |
-|---|---|---|
-| invoice | `9400000005` | `DUMMY` |
-| payment | `3300000017` | `0000010002` |
+### กลไก
 
 clearing line **inherit** profit center จาก open item ที่ถูก clear
-พอสองฝั่งเป็นคนละ PC document splitting ก็ต้องเติมบรรทัด zero-balance
-เสมอ ไม่ว่าจะ clear ด้วย API หรือ standard app
 
-API ไม่มี field ให้ระบุ profit center ของบรรทัด clearing (และไม่ควรมี
-เพราะต้อง inherit) → **แก้จาก code ไม่ได้**
+| ฝั่ง | เอกสาร | Profit Center | AR | Tax | รวม |
+|---|---|---|---:|---:|---:|
+| invoice | `9400000005` | `DUMMY` | +6,418.93 | −419.93 | **+5,999.00** |
+| payment | `3300000017` | `0000010002` | −6,418.93 | +419.93 | **−5,999.00** |
 
-### สิ่งที่ต้องทำต่อ
+เอกสาร balance โดยรวมแต่ไม่ balance รายตัว profit center → splitting เติม
+บรรทัด zero-balance เข้ามาให้แต่ละ PC เป็นศูนย์ เป็นพฤติกรรมมาตรฐาน
+เกิดเหมือนกันไม่ว่าจะ clear ด้วย API หรือ standard app
 
-1. ให้ functional reverse `3000000003` แล้ว clear คู่เดิมด้วย **standard app**
-   → ถ้ามี `0012990002` เหมือนกัน = ไม่ใช่เรื่อง API เลย
-2. ไล่หาว่าทำไม invoice `9400000005` (จาก billing `JA70000046`) ถึงได้
-   profit center `DUMMY` — profit center derivation ฝั่ง SD/billing ไม่ครบ
-   ตัวนี้กระทบงบระดับ profit center ทั้งระบบ ไม่ใช่แค่เอกสาร clearing ใบนี้
+### สิ่งที่ทดสอบแล้วว่า **ไม่เกี่ยว**
+
+| ทดสอบ | ผล |
+|---|---|
+| document type `AB` (เอกสาร `0100000002`) | มีบรรทัด zero-balance |
+| document type `DA` (เอกสาร `3000000003`) | มีบรรทัด zero-balance เหมือนกันเป๊ะ |
+
+API ไม่มี field ให้ระบุ profit center ของบรรทัด clearing และไม่ควรมี
+เพราะต้อง inherit จากต้นทาง
+
+> document type ที่ใช้จริงคือ **`DA` (Customer Document)** ตามที่ functional กำหนด

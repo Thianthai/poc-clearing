@@ -39,7 +39,8 @@ body ว่าง ไม่ได้แปลว่า clear สำเร็จ 
 | | |
 |---|---|
 | Test case | AR full clearing + deferred output tax · customer `0001000082` · THB |
-| **Clearing document** | **`0100000002`** ลงวันที่ 2026-09-09 |
+| Document type | `DA` — Customer Document |
+| **Clearing document** | **`3000000003`** ลงวันที่ 2026-09-10 |
 
 บรรทัดที่ส่งเข้า API — ทั้งหมดถูก clear ด้วยเอกสารเดียวกัน
 
@@ -52,6 +53,10 @@ body ว่าง ไม่ได้แปลว่า clear สำเร็จ 
 
 บรรทัด G/L ที่เหลือ (bank, ค่าธรรมเนียม, revenue, tax อีกตัว) ไม่ต้องส่ง
 ระบบสร้าง offsetting ให้เอง
+
+เอกสารที่ได้มี 6 บรรทัดใน ACDOCA — 4 บรรทัดจาก payload + 2 บรรทัด
+zero-balance clearing ที่ document splitting สร้างเอง ซึ่ง functional
+ยืนยันแล้วว่า**ถูกต้อง** (ดู [docs/01](docs/01-api-reference.md))
 
 ### สิ่งที่พิสูจน์ได้
 
