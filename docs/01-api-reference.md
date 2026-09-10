@@ -190,3 +190,46 @@ JournalEntryBulkClearingRequest
 - [Journal Entry – Clearing (Asynchronous) — SAP Help Portal](https://help.sap.com/docs/SAP_S4HANA_CLOUD/b978f98fc5884ff2aeb10c8fdeb8a43b/5142cdd767b04122a8beb6ecd460a922.html)
 - [Calling SOAP Asynchronous Api In RAP (Public Cloud)](https://community.sap.com/t5/technology-blog-posts-by-members/calling-soap-asynchronous-api-in-rap-public-cloud/ba-p/14012118)
 - [APIs for Journal Entries – The Collection](https://community.sap.com/t5/technology-blog-posts-by-sap/apis-for-journal-entries-the-collection-updated-july-2025/ba-p/13565258)
+
+---
+
+## Document splitting กับ clearing document ที่ API สร้าง
+
+เจอตอนตรวจ clearing document `0100000002` (2026-09-09) — มีบรรทัด G/L
+`0012990002` โผล่มา 2 บรรทัด ±5,999.00 ซึ่งไม่มีตอน clear ด้วย standard app
+
+### บรรทัดพวกนี้ไม่ได้มาจาก payload
+
+| Ledger item | G/L | Amount | Profit Center | Partner PC | `AccountingDocumentItem` |
+|---|---|---:|---|---|---|
+| 000005 | `0012990002` | +5,999.00 | `0000010002` | `DUMMY` | **`000`** |
+| 000006 | `0012990002` | −5,999.00 | `DUMMY` | `0000010002` | **`000`** |
+
+`AccountingDocumentItem = 000` = ไม่มีใน BSEG มีแต่ใน ACDOCA → เป็นบรรทัดที่
+**document splitting สร้างเอง** (Zero-Balance Clearing Account)
+จึงไม่โผล่ใน `I_OperationalAcctgDocItem` ตอนเช็คผล
+
+### ทำไมถึงเกิด
+
+| Profit Center | AR `0011030001` | Tax `0021082005` | รวม |
+|---|---:|---:|---:|
+| `DUMMY` (ฝั่ง invoice) | +6,418.93 | −419.93 | **+5,999.00** |
+| `0000010002` (ฝั่ง payment) | −6,418.93 | +419.93 | **−5,999.00** |
+
+เอกสาร balance โดยรวมแต่**ไม่ balance รายตัว profit center** — splitting เลยเติม
+บรรทัด zero-balance เข้ามา
+
+ต้นตอ: บรรทัดจาก invoice ถือ PC `DUMMY` ส่วนบรรทัดจาก payment ถือ `0000010002`
+
+### สาเหตุที่เป็นไปได้
+
+| # | สาเหตุ | ควบคุมได้จาก code |
+|---|---|---|
+| 1 | **document type `AB`** ถูก classify ใน document splitting เป็น business transaction คนละแบบกับ `DZ` ที่ standard app ใช้ | ✅ `gc_document_type` |
+| 2 | invoice ต้นทางมี profit center = `DUMMY` (master data derivation ไม่ครบ) | ❌ ต้องแก้ที่ต้นทาง |
+| 3 | baseline ที่เอาไปเทียบเป็นคนละคู่เอกสาร | ❌ ต้องยืนยันกับ functional |
+
+### วิธีพิสูจน์
+
+reverse clearing document แล้วยิงใหม่ด้วย `gc_document_type = 'DZ'`
+ถ้าบรรทัด `0012990002` หายไป = เป็นเรื่อง document type classification
