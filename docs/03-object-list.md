@@ -5,12 +5,15 @@
 
 | # | Object | Type | ใครสร้าง | Status |
 |---|---|---|---|---|
-| 1 | `YPOC_CLEARING` | Package | ผู้ใช้ (ADT) | ⬜ ยังไม่สร้าง |
-| 2 | `ZAPI_SPORTPACKAGE_CLEARING_REST` | Outbound Service (HTTP) | ผู้ใช้ (ADT) | 🟡 สร้าง + publish แล้ว ยังไม่ push |
-| 3 | `ZCS_SPORTPACKAGE_CLEARING` | Communication Scenario | ผู้ใช้ (ADT) | 🟡 สร้าง + publish แล้ว ยังไม่ push |
-| 4 | `YCL_CLEARING` | Class (console, `IF_OO_ADT_CLASSRUN`) | ผู้ใช้ copy จาก chat | 🟡 activate + รัน dry-run ผ่านแล้ว ยังไม่ push |
+| 1 | `YPOC_CLEARING` | Package | ผู้ใช้ (ADT) | ✅ [`src/package.devc.xml`](../src/package.devc.xml) |
+| 2 | `ZAPI_SPORTPACKAGE_CLEARING_REST` | Outbound Service (HTTP) | ผู้ใช้ (ADT) | ✅ [`src/zapi_sportpackage_clearing_rest.sco3.xml`](../src/zapi_sportpackage_clearing_rest.sco3.xml) |
+| 3 | `ZCS_SPORTPACKAGE_CLEARING` | Communication Scenario | ผู้ใช้ (ADT) | ✅ [`src/zcs_sportpackage_clearing.sco1.xml`](../src/zcs_sportpackage_clearing.sco1.xml) |
+| 4 | `YCL_CLEARING` | Class (console, `IF_OO_ADT_CLASSRUN`) | ผู้ใช้ (ADT) | ✅ [`src/ycl_clearing.clas.abap`](../src/ycl_clearing.clas.abap) |
 
 Legend: ⬜ ยังไม่สร้าง · 🟡 สร้างแล้วยังไม่ push · ✅ push ขึ้น repo แล้ว
+
+**push ครบทุก object แล้ว** (2026-09-10) — abapGit serialize ด้วย
+`FOLDER_LOGIC = FULL`, `STARTING_FOLDER = /src/`
 
 ## Config ที่ไม่ใช่ repository object
 
@@ -57,6 +60,7 @@ payload หรือมาจาก destination
 | 2026-09-10 | เปลี่ยน document type `AB` → `DA` แล้วยิงใหม่ | ⚠️ ได้เอกสาร `3000000003` แต่ `0012990002` ยังอยู่ — **document type ไม่ใช่ต้นเหตุ** |
 | 2026-09-10 | สรุปต้นเหตุ | profit center ของ invoice (`DUMMY`) กับ payment (`0000010002`) ไม่ตรงกัน → document splitting เติม zero-balance |
 | 2026-09-10 | **functional ยืนยันกลับ** | ✅ **บรรทัด zero-balance ถูกต้องแล้ว** — เข้าใจผิดตอนแรก · ใช้ doc type `DA` · **ปิดเคส POC สำเร็จ** |
+| 2026-09-10 | push ABAP object ขึ้น repo ผ่าน abapGit | ✅ ครบทุก object · docs/05 sync กับ `src/` แล้ว |
 
 ### ยังพิสูจน์ไม่ได้ (รออะไรอยู่)
 

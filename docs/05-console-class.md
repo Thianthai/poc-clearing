@@ -1,8 +1,16 @@
 # 05 — Console Class `YCL_CLEARING`
 
-> **snapshot เพื่ออ่านอย่างเดียว** — source of truth คือ object บน tenant
-> ผู้ใช้เป็นคน copy code นี้ไปสร้างใน ADT แล้ว push ผ่าน abapGit เอง
-> ถ้าแก้บน tenant แล้ว ให้บอก Claude มาอัปเดตหน้านี้ตาม
+> **snapshot เพื่ออ่านอย่างเดียว** — source of truth คือ
+> [`src/ycl_clearing.clas.abap`](../src/ycl_clearing.clas.abap) ที่ abapGit
+> serialize ขึ้นมาจาก tenant · หน้านี้ sync กับไฟล์นั้นเมื่อ 2026-09-10
+
+> ⚠️ **`gc_test_run = 'false'`** — กด F9 แล้ว **post เอกสารจริงทันที**
+> ถ้าจะแค่เปิดดูให้เปลี่ยนเป็น `'true'` (simulate) ก่อน
+
+> ⚠️ เวอร์ชันนี้ **ไม่รองรับ partial / residual clearing** แล้ว — field
+> `partial_amount` / `cash_discount` / `other_deduction` / `diff_reason`
+> กับ block ที่ emit node เหล่านั้นถูก comment ไว้ในไฟล์ ถ้าจะใช้ต้อง
+> uncomment ทั้งสองที่ให้ครบคู่
 
 ## สถานะ: มี test data จริงแล้ว (AR full clearing)
 
@@ -60,19 +68,31 @@ CLASS ycl_clearing DEFINITION
   PRIVATE SECTION.
 
     TYPES:
+*      "! customer/vendor open item
+*      BEGIN OF ty_apar_item,
+*        ref_doc_item    TYPE i,
+*        company_code    TYPE string,
+*        account_type    TYPE string,       "D = customer, K = vendor
+*        apar_account    TYPE string,
+*        fiscal_year     TYPE string,
+*        acctg_doc       TYPE string,
+*        acctg_doc_item  TYPE string,
+*        partial_amount  TYPE string,       "partial clearing
+*        cash_discount   TYPE string,       "residual: ส่วนลดเงินสด
+*        other_deduction TYPE string,       "residual: ยอดคงเหลือ (ใส่ค่าติดลบ)
+*        diff_reason     TYPE string,       "reason code ของผลต่าง
+*      END OF ty_apar_item,
+*      tt_apar_item TYPE STANDARD TABLE OF ty_apar_item WITH EMPTY KEY,
+
       "! customer/vendor open item
       BEGIN OF ty_apar_item,
-        ref_doc_item    TYPE i,
-        company_code    TYPE string,
-        account_type    TYPE string,       "D = customer, K = vendor
-        apar_account    TYPE string,
-        fiscal_year     TYPE string,
-        acctg_doc       TYPE string,
-        acctg_doc_item  TYPE string,
-        partial_amount  TYPE string,       "partial clearing
-        cash_discount   TYPE string,       "residual: ส่วนลดเงินสด
-        other_deduction TYPE string,       "residual: ยอดคงเหลือ (ใส่ค่าติดลบ)
-        diff_reason     TYPE string,       "reason code ของผลต่าง
+        ref_doc_item   TYPE i,
+        company_code   TYPE string,
+        account_type   TYPE string,       "D = customer, K = vendor
+        apar_account   TYPE string,
+        fiscal_year    TYPE string,
+        acctg_doc      TYPE string,
+        acctg_doc_item TYPE string,
       END OF ty_apar_item,
       tt_apar_item TYPE STANDARD TABLE OF ty_apar_item WITH EMPTY KEY,
 
@@ -87,23 +107,21 @@ CLASS ycl_clearing DEFINITION
       END OF ty_gl_item,
       tt_gl_item TYPE STANDARD TABLE OF ty_gl_item WITH EMPTY KEY.
 
-    "--- destination (ดู docs/02-communication-setup.md) ---
-    "ต้องรันจาก client เดียวกับที่สร้าง communication arrangement ไว้
+    "--- destination ---
     CONSTANTS gc_comm_scenario TYPE c LENGTH 30 VALUE 'ZCS_SPORTPACKAGE_CLEARING'.
     CONSTANTS gc_service_id    TYPE c LENGTH 40 VALUE 'ZAPI_SPORTPACKAGE_CLEARING_REST'.
     CONSTANTS gc_soap_action   TYPE string VALUE 'http://sap.com/xi/SAPSCORE/SFIN/JournalEntryBulkClearingRequest_In/JournalEntryBulkClearingRequest_InRequest'.
 
     CONSTANTS gc_dry_run  TYPE abap_bool VALUE abap_false.
-    CONSTANTS gc_test_run TYPE string    VALUE 'true'. "ยิงจริงแต่ให้ SAP simulate ไม่ post เอกสาร
+    CONSTANTS gc_test_run TYPE string    VALUE 'false'. "ยิงจริงแต่ให้ SAP simulate ไม่ post เอกสาร
 
     CONSTANTS gc_company_code  TYPE string VALUE '1000'.
-    "! DA = Customer Document — functional กำหนด (2026-09-10)
-    "! เดิมใช้ AB แล้ว document splitting เติมบรรทัด zero-balance clearing เข้ามา
     CONSTANTS gc_document_type TYPE string VALUE 'DA'.
     CONSTANTS gc_currency      TYPE string VALUE 'THB'.
     CONSTANTS gc_header_text   TYPE string VALUE 'POC Clearing via SOAP'.
     CONSTANTS gc_reference_doc TYPE string VALUE 'POC-CLEAR'.
     CONSTANTS gc_created_by    TYPE string VALUE 'POC_USER'.
+
     "! G/L Deferred Output Tax — ต้อง clear คู่ไปกับฝั่ง AR เสมอ
     CONSTANTS gc_gl_deferred_tax TYPE string VALUE '0021082005'.
 
@@ -133,7 +151,7 @@ CLASS ycl_clearing IMPLEMENTATION.
   METHOD if_oo_adt_classrun~main.
 
     "----------------------------------------------------------
-    " เก็บไว้ reuse — query ตรวจ open item ก่อนยิง (Q12 ใน docs/06)
+    " เก็บไว้ reuse — query ตรวจ open item ก่อนยิง
     " ใช้ยืนยันว่าบรรทัดที่จะ clear ยัง open อยู่จริง ยอดรวม = 0
     " และ ClearingAccountingDocument ยังว่าง
     "----------------------------------------------------------
@@ -245,9 +263,6 @@ CLASS ycl_clearing IMPLEMENTATION.
 
       CATCH cx_http_dest_provider_error INTO DATA(lx_dest).
         io_out->write( |ERROR (destination): { lx_dest->get_text( ) }| ).
-        io_out->write( `หา comm arrangement ไม่เจอ — เช็ค 2 อย่าง` ).
-        io_out->write( `1) รันอยู่ client เดียวกับที่สร้าง arrangement ไหม (arrangement ผูกกับ client)` ).
-        io_out->write( `2) gc_service_id ตรงกับคอลัมน์ Outbound Service ID ใน ADT ไหม` ).
 
       CATCH cx_web_http_client_error
             cx_web_message_error INTO DATA(lx_error).
@@ -294,14 +309,9 @@ CLASS ycl_clearing IMPLEMENTATION.
       |          <DocumentDate>{ lv_doc_date }</DocumentDate>\n| &&
       |          <PostingDate>{ lv_doc_date }</PostingDate>\n| &&
       |          <CurrencyCode>{ gc_currency }</CurrencyCode>\n| &&
-      |          <DocumentHeaderText>| &&
-      |{ escape( val = gc_header_text format = cl_abap_format=>e_xml_text ) }| &&
-      |</DocumentHeaderText>\n| &&
-      |          <ReferenceDocument>| &&
-      |{ escape( val = gc_reference_doc format = cl_abap_format=>e_xml_text ) }| &&
-      |</ReferenceDocument>\n| &&
-      |          <CreatedByUser>{ gc_created_by }</CreatedByUser>\n| &&
-      build_items_xml( ) &&
+      |          <DocumentHeaderText>| && |{ escape( val = gc_header_text format = cl_abap_format=>e_xml_text ) }| && |</DocumentHeaderText>\n| &&
+      |          <ReferenceDocument>| && |{ escape( val = gc_reference_doc format = cl_abap_format=>e_xml_text ) }| && |</ReferenceDocument>\n| &&
+      |          <CreatedByUser>{ gc_created_by }</CreatedByUser>\n| && build_items_xml( ) &&
       |        </JournalEntry>\n| &&
       |      </JournalEntryClearingRequest>\n| &&
       |    </sfin:JournalEntryBulkClearingRequest>\n| &&
@@ -339,19 +349,48 @@ CLASS ycl_clearing IMPLEMENTATION.
         |            <FiscalYear>{ ls_apar-fiscal_year }</FiscalYear>\n| &&
         |            <AccountingDocument>{ ls_apar-acctg_doc }</AccountingDocument>\n| &&
         |            <AccountingDocumentItem>{ ls_apar-acctg_doc_item }</AccountingDocumentItem>\n| &&
-        COND string( WHEN ls_apar-partial_amount IS NOT INITIAL
-                     THEN |            <PartialPaymentAmtInDspCrcy currencyCode="{ gc_currency }">| &&
-                          |{ ls_apar-partial_amount }</PartialPaymentAmtInDspCrcy>\n| ) &&
-        COND string( WHEN ls_apar-cash_discount IS NOT INITIAL
-                     THEN |            <CashDiscountAmountInDspCrcy currencyCode="{ gc_currency }">| &&
-                          |{ ls_apar-cash_discount }</CashDiscountAmountInDspCrcy>\n| ) &&
-        COND string( WHEN ls_apar-other_deduction IS NOT INITIAL
-                     THEN |            <OtherDeductionAmountInDspCrcy currencyCode="{ gc_currency }">| &&
-                          |{ ls_apar-other_deduction }</OtherDeductionAmountInDspCrcy>\n| ) &&
-        COND string( WHEN ls_apar-diff_reason IS NOT INITIAL
-                     THEN |            <PaymentDifferenceReason>{ ls_apar-diff_reason }</PaymentDifferenceReason>\n| ) &&
         |          </APARItems>\n|.
     ENDLOOP.
+
+*    DATA(lt_gl) = get_gl_items( ).
+*    LOOP AT lt_gl INTO DATA(ls_gl).
+*      rv_xml = rv_xml &&
+*        |          <GLItems>\n| &&
+*        |            <ReferenceDocumentItem>{ ls_gl-ref_doc_item }</ReferenceDocumentItem>\n| &&
+*        COND string( WHEN ls_gl-company_code IS NOT INITIAL
+*                     THEN |            <CompanyCode>{ ls_gl-company_code }</CompanyCode>\n| ) &&
+*        |            <GLAccount>{ ls_gl-gl_account }</GLAccount>\n| &&
+*        |            <FiscalYear>{ ls_gl-fiscal_year }</FiscalYear>\n| &&
+*        |            <AccountingDocument>{ ls_gl-acctg_doc }</AccountingDocument>\n| &&
+*        |            <AccountingDocumentItem>{ ls_gl-acctg_doc_item }</AccountingDocumentItem>\n| &&
+*        |          </GLItems>\n|.
+*    ENDLOOP.
+*
+*    DATA(lt_apar) = get_apar_items( ).
+*    LOOP AT lt_apar INTO DATA(ls_apar).
+*      rv_xml = rv_xml &&
+*        |          <APARItems>\n| &&
+*        |            <ReferenceDocumentItem>{ ls_apar-ref_doc_item }</ReferenceDocumentItem>\n| &&
+*        COND string( WHEN ls_apar-company_code IS NOT INITIAL
+*                     THEN |            <CompanyCode>{ ls_apar-company_code }</CompanyCode>\n| ) &&
+*        |            <AccountType>{ ls_apar-account_type }</AccountType>\n| &&
+*        |            <APARAccount>{ ls_apar-apar_account }</APARAccount>\n| &&
+*        |            <FiscalYear>{ ls_apar-fiscal_year }</FiscalYear>\n| &&
+*        |            <AccountingDocument>{ ls_apar-acctg_doc }</AccountingDocument>\n| &&
+*        |            <AccountingDocumentItem>{ ls_apar-acctg_doc_item }</AccountingDocumentItem>\n| &&
+*        COND string( WHEN ls_apar-partial_amount IS NOT INITIAL
+*                     THEN |            <PartialPaymentAmtInDspCrcy currencyCode="{ gc_currency }">| &&
+*                          |{ ls_apar-partial_amount }</PartialPaymentAmtInDspCrcy>\n| ) &&
+*        COND string( WHEN ls_apar-cash_discount IS NOT INITIAL
+*                     THEN |            <CashDiscountAmountInDspCrcy currencyCode="{ gc_currency }">| &&
+*                          |{ ls_apar-cash_discount }</CashDiscountAmountInDspCrcy>\n| ) &&
+*        COND string( WHEN ls_apar-other_deduction IS NOT INITIAL
+*                     THEN |            <OtherDeductionAmountInDspCrcy currencyCode="{ gc_currency }">| &&
+*                          |{ ls_apar-other_deduction }</OtherDeductionAmountInDspCrcy>\n| ) &&
+*        COND string( WHEN ls_apar-diff_reason IS NOT INITIAL
+*                     THEN |            <PaymentDifferenceReason>{ ls_apar-diff_reason }</PaymentDifferenceReason>\n| ) &&
+*        |          </APARItems>\n|.
+*    ENDLOOP.
 
   ENDMETHOD.
 
@@ -365,7 +404,6 @@ CLASS ycl_clearing IMPLEMENTATION.
     " invoice 9400000005/2026 item 001 : +6,418.93  (PK 01)
     " payment 3300000017/2026 item 005 : -6,418.93  (PK 15)
     " customer 0001000082 - THB - รวมกัน = 0.00 พอดี
-    " ReferenceDocumentItem ต่อจาก GLItems (1-2) จึงเริ่มที่ 3
     rt_items = VALUE #(
       company_code = gc_company_code
       account_type = 'D'

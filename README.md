@@ -64,7 +64,7 @@ zero-balance clearing ที่ document splitting สร้างเอง ซ�
   communication arrangement โดยไม่ต้อง hardcode credential
 - ประกอบ SOAP envelope + WS-Addressing header เองด้วย string template ใช้งานได้จริง
   ไม่ต้องมี consumer proxy
-- รองรับ full / partial / residual clearing ครบตาม field ที่ API เปิดให้
+- รองรับ **full clearing** · โครงสร้างสำหรับ partial / residual มีอยู่ในไฟล์แต่ comment ไว้ ยังไม่ได้ทดสอบ
 - **ใส่ `GLItems` กับ `APARItems` ปนกันใน `JournalEntry` เดียวได้** — ได้ clearing
   document ใบเดียวคลุมทั้ง AR และ deferred output tax
   (payload ตัวอย่างของ SAP ไม่เคยแสดงเคสนี้ แต่ทดสอบแล้วใช้ได้จริง)
@@ -75,6 +75,19 @@ zero-balance clearing ที่ document splitting สร้างเอง ซ�
   ทำได้แค่ clear open item ที่มีอยู่แล้ว
 - เป็น async → ต้องมีทางตามผล (AIF Message Dashboard หรือเปิด
   outbound confirmation service)
+
+## Object บน repo
+
+abapGit serialize ด้วย `FOLDER_LOGIC = FULL` · `STARTING_FOLDER = /src/`
+
+| ไฟล์ | Object |
+|---|---|
+| [`src/ycl_clearing.clas.abap`](src/ycl_clearing.clas.abap) | console class `YCL_CLEARING` |
+| [`src/zcs_sportpackage_clearing.sco1.xml`](src/zcs_sportpackage_clearing.sco1.xml) | communication scenario |
+| [`src/zapi_sportpackage_clearing_rest.sco3.xml`](src/zapi_sportpackage_clearing_rest.sco3.xml) | outbound service |
+| [`src/package.devc.xml`](src/package.devc.xml) | package `YPOC_CLEARING` |
+
+> `gc_test_run` บน tenant ตั้งเป็น `'false'` — กด F9 แล้ว **post จริง**
 
 ## เอกสาร
 

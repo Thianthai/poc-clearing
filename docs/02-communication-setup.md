@@ -32,7 +32,7 @@ Fiori app **Maintain Communication Users**
 | ช่อง | ค่า |
 |---|---|
 | User Name | `ABAP_DEV` (ใช้ตัวที่มีอยู่แล้วบน tenant) |
-| Description | POC Journal Entry Clearing |
+| Description | `Sport Package Journal Entry Clearing` (ค่าจริงบน tenant) |
 | Password | กด *Propose Password* แล้ว **copy เก็บไว้** |
 
 > password แสดงครั้งเดียว ถ้าหายต้อง reset ใหม่
@@ -128,7 +128,7 @@ Cloud Communication Management → **Outbound Service**
 | ช่อง | ค่า |
 |---|---|
 | Name | พิมพ์ `ZAPI_SPORTPACKAGE_CLEARING` → ADT เติม `_REST` ให้เอง กลายเป็น **`ZAPI_SPORTPACKAGE_CLEARING_REST`** (31 ตัวอักษร) |
-| Description | Journal Entry Bulk Clearing (SOAP inbound) |
+| Description | `Journal Entry Clearing` (ค่าจริงบน tenant) |
 | Service Type | **HTTP** |
 | Default Path Prefix | `/sap/bc/srt/scs_ext/sap/journalentrybulkclearingreques` |
 
@@ -152,7 +152,7 @@ ADT → New → **Communication Scenario**
 |---|---|
 | Name | `ZCS_SPORTPACKAGE_CLEARING` |
 | Communication Scenario Type | `Customer` |
-| Description | POC Journal Entry Clearing |
+| Description | `Sport Package Journal Entry Clearing` (ค่าจริงบน tenant) |
 | Allowed Instances | *One instance per scenario & communication system* |
 
 - Scope Dependent → **ไม่ต้องติ๊ก**
