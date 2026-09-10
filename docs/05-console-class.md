@@ -4,8 +4,7 @@
 > [`src/ycl_clearing.clas.abap`](../src/ycl_clearing.clas.abap) ที่ abapGit
 > serialize ขึ้นมาจาก tenant
 >
-> ⏳ หน้านี้เป็นเวอร์ชันที่ตกลงกันไว้เมื่อ 2026-09-10 **รออัปเดตบน tenant
-> แล้ว push ทับ** — ระหว่างนี้ `src/` ยังเป็นของเดิม
+> ✅ verify แล้วเมื่อ 2026-09-10 — หน้านี้ตรงกับ `src/` ทุกบรรทัด
 
 > ⚠️ **partial / residual clearing** — field `partial_amount` /
 > `cash_discount` / `other_deduction` / `diff_reason` กับ block ที่ emit

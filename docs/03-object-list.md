@@ -61,7 +61,7 @@ payload หรือมาจาก destination
 | 2026-09-10 | สรุปต้นเหตุ | profit center ของ invoice (`DUMMY`) กับ payment (`0000010002`) ไม่ตรงกัน → document splitting เติม zero-balance |
 | 2026-09-10 | **functional ยืนยันกลับ** | ✅ **บรรทัด zero-balance ถูกต้องแล้ว** — เข้าใจผิดตอนแรก · ใช้ doc type `DA` · **ปิดเคส POC สำเร็จ** |
 | 2026-09-10 | push ABAP object ขึ้น repo ผ่าน abapGit | ✅ ครบทุก object |
-| 2026-09-10 | เทียบ `src/` กับเอกสาร แล้วตกลงชุดแก้ไข | ⏳ รออัปเดตบน tenant แล้ว push ทับ — `gc_test_run` กลับเป็น `'true'`, คืน hint ใน CATCH, คืน comment ที่หายไป, คง `ty_apar_item` แบบ reference (comment ของเดิมไว้) |
+| 2026-09-10 | เทียบ `src/` กับเอกสาร แล้วตกลงชุดแก้ไข | ✅ อัปเดตบน tenant + push แล้ว — `gc_test_run` กลับเป็น `'true'`, คืน hint ใน CATCH, คืน comment ที่หายไป, คง `ty_apar_item` แบบ reference · **`src/` = docs/05 ตรงกันทุกบรรทัด** |
 
 ### ยังพิสูจน์ไม่ได้ (รออะไรอยู่)
 
