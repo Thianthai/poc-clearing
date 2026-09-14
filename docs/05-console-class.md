@@ -4,9 +4,8 @@
 > [`src/ycl_clearing.clas.abap`](../src/ycl_clearing.clas.abap) ที่ abapGit
 > serialize ขึ้นมาจาก tenant
 >
-> ⏳ 2026-09-14 — test data ชุดที่ 3 (payment `3300000031` จาก JE Post API
-> พร้อม WHT + deferred tax `7200000002`) · snapshot นี้เป็นเวอร์ชันเต็ม 4 บรรทัด
-> รออัปเดตบน tenant แล้ว push ทับ
+> ✅ verify แล้วเมื่อ 2026-09-14 — หน้านี้ตรงกับ `src/` ทุกบรรทัด
+> (test data ชุดที่ 3 · clearing document `3000000005`)
 
 > **partial / residual clearing — ไม่อยู่ใน scope ของ POC นี้**
 > field `partial_amount` / `cash_discount` / `other_deduction` /
