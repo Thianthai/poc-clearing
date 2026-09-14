@@ -4,7 +4,9 @@
 > [`src/ycl_clearing.clas.abap`](../src/ycl_clearing.clas.abap) ที่ abapGit
 > serialize ขึ้นมาจาก tenant
 >
-> ✅ verify แล้วเมื่อ 2026-09-10 — หน้านี้ตรงกับ `src/` ทุกบรรทัด
+> ⏳ 2026-09-14 — แก้ `get_apar_items( )` / `get_gl_items( )` เป็น test data
+> ชุดที่ 2 (payment `3300000026` + deferred tax `7200000001`)
+> **รออัปเดตบน tenant แล้ว push ทับ** — ระหว่างนี้ `src/` ยังเป็นชุดที่ 1
 
 > **partial / residual clearing — ไม่อยู่ใน scope ของ POC นี้**
 > field `partial_amount` / `cash_discount` / `other_deduction` /
@@ -408,12 +410,12 @@ CLASS ycl_clearing IMPLEMENTATION.
 
   METHOD get_apar_items.
 
-    " Test case: AR full clearing
+    " Test case: AR full clearing (ชุดที่ 2 — payment แยก deferred tax ออกเป็นคนละ doc)
     "   ทุกบรรทัดต้องเป็น open item จริง ยอดรวม (signed) = 0
     "   SpecialGLCode ต้องว่าง (API ไม่รองรับ special G/L)
     " SO JA30000116 > billing JA70000046
     " invoice 9400000005/2026 item 001 : +6,418.93  (PK 01)
-    " payment 3300000017/2026 item 005 : -6,418.93  (PK 15)
+    " payment 3300000026/2026 item 003 : -6,418.93  (PK 11)
     " customer 0001000082 - THB - รวมกัน = 0.00 พอดี
     " ReferenceDocumentItem ต่อจาก GLItems (1-2) จึงเริ่มที่ 3
     rt_items = VALUE #(
@@ -425,8 +427,8 @@ CLASS ycl_clearing IMPLEMENTATION.
         acctg_doc      = '9400000005'
         acctg_doc_item = '001' )
       ( ref_doc_item   = 4
-        acctg_doc      = '3300000017'
-        acctg_doc_item = '005' ) ).
+        acctg_doc      = '3300000026'
+        acctg_doc_item = '003' ) ).
 
   ENDMETHOD.
 
@@ -434,8 +436,9 @@ CLASS ycl_clearing IMPLEMENTATION.
   METHOD get_gl_items.
 
     " Deferred Output Tax — functional ยืนยันว่าต้อง clear คู่กับฝั่ง AR
-    "   invoice 9400000005/2026 item 003 : -419.93
-    "   payment 3300000017/2026 item 003 : +419.93
+    "   ชุดที่ 2: deferred tax แยกออกมาเป็น doc ของตัวเอง (SA) ไม่อยู่ใน payment แล้ว
+    "   invoice      9400000005/2026 item 003 : -419.93
+    "   deferred tax 7200000001/2026 item 003 : +419.93
     "   G/L 0021082005 - IsOpenItemManaged = 'X' - รวมกัน = 0.00 พอดี
     " GLItems ถูก emit ก่อน APARItems จึงใช้ ReferenceDocumentItem 1-2
     rt_items = VALUE #(
@@ -446,7 +449,7 @@ CLASS ycl_clearing IMPLEMENTATION.
         acctg_doc      = '9400000005'
         acctg_doc_item = '003' )
       ( ref_doc_item   = 2
-        acctg_doc      = '3300000017'
+        acctg_doc      = '7200000001'
         acctg_doc_item = '003' ) ).
 
   ENDMETHOD.
