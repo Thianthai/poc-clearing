@@ -508,8 +508,14 @@ ENDCLASS.
 **recipient ที่ user ถูก assign ไว้** ถ้า user ยังไม่ถูก assign กับ recipient ไหนเลย
 หน้าจอจะว่างเปล่าโดยไม่มี error บอกใบ้
 
-แก้ที่ Fiori app **Assign Recipients to Users** → assign recipient ของ namespace
-`http://sap.com/xi/SAPSCORE/SFIN` ให้ user ตัวเอง
+แก้ที่ Fiori app **Assign Recipients to Users**
+
+| ช่อง | ค่า |
+|---|---|
+| Namespace | **`/FINAC`** (AIF for Accounting) — ไม่ใช่ `http://sap.com/xi/SAPSCORE/SFIN` ซึ่งเป็น XML namespace ของ payload เลือกแล้ว recipient จะว่าง |
+| Recipient Name | **`FINAC_RECT_JECLEARING_IN`** (clearing) · `FINAC_RECT_JOURNALENTRY_IN` (post) · `FINAC_RECT_JECHANGE_IN` (change) |
+| Message Type | ปล่อยว่าง = ทุกประเภท |
+| Overview / Technical User | ติ๊กทั้งคู่ |
 
 ถ้าแก้ไม่ได้ ขึ้น *"No authorization to edit user-recipient assignment"*
 = ขาด business catalog `SAP_CA_BC_COM_CONF_PC` (บาง release เป็น

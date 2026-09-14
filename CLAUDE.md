@@ -55,6 +55,10 @@ prefix ตัวแปรตาม global rules (`gc_` / `lv_` / `lo_` / `ls_` /
 - **Message Dashboard ว่างเปล่าทั้งที่ได้ 202** = user ยังไม่ถูก assign กับ
   AIF recipient ไม่ใช่ว่า message ไม่เข้า → Fiori app *Assign Recipients to Users*
   (ต้องมี business catalog `SAP_CA_BC_COM_CONF_PC`)
+  **AIF namespace คือ `/FINAC` (AIF for Accounting) ไม่ใช่ `http://sap.com/xi/SAPSCORE/SFIN`**
+  (อันนั้นเป็น XML namespace ของ payload เลือกแล้ว recipient จะว่าง)
+  recipient ของ clearing API = `FINAC_RECT_JECLEARING_IN`
+  (JE Post = `FINAC_RECT_JOURNALENTRY_IN` · JE Change = `FINAC_RECT_JECHANGE_IN`)
   ทางพิสูจน์ที่ไม่พึ่ง AIF: ยิงด้วย `gc_test_run = 'false'` แล้ว query
   `ClearingAccountingDocument` ใน `I_OperationalAcctgDocItem`
 - ต้องส่ง **WS-Addressing header** (`wsa:Action` + `wsa:MessageID`) ใน SOAP header
