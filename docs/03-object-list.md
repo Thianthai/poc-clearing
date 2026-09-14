@@ -65,6 +65,8 @@ payload หรือมาจาก destination
 | 2026-09-14 | bisect รอบ 1 — AR อย่างเดียว | ❌ ตก |
 | 2026-09-14 | bisect รอบ 2 — GL อย่างเดียว | ✅ clear ได้ `3000000004` → ต้นเหตุอยู่ AR pair |
 | 2026-09-14 | assign AIF recipient (`/FINAC` → `FINAC_RECT_JECLEARING_IN`) แล้วอ่าน error | ✅ **`F5 787` inconsistent withholding tax info** — บรรทัดลูกหนี้ของ `3300000026` (post ผ่าน JE Post API) ไม่มี WHT info ทั้งที่ customer master มี → ต้องแก้ payload ฝั่ง JE Post ให้ส่ง `WithholdingTaxItem` |
+| 2026-09-14 | ฝั่ง JE Post แก้ payload (WHT type `MA` code `09`) · reverse ชุดที่ 2 ทั้งหมด · post ใหม่ `3300000031` + `7200000002` | ✅ บรรทัดลูกหนี้มี `WithholdingTaxCode = XX` ตรงกับ invoice แล้ว |
+| 2026-09-14 06:14 UTC | **ยิงชุดที่ 3 ครบ 4 บรรทัด** | ✅ **สำเร็จ** — clearing document `3000000005` คลุม invoice + payment (JE Post API) + deferred tax transfer · โครงสร้างเหมือน `3000000003` |
 | 2026-09-10 | เทียบ `src/` กับเอกสาร แล้วตกลงชุดแก้ไข | ✅ อัปเดตบน tenant + push แล้ว — `gc_test_run` กลับเป็น `'true'`, คืน hint ใน CATCH, คืน comment ที่หายไป, คง `ty_apar_item` แบบ reference · **`src/` = docs/05 ตรงกันทุกบรรทัด** |
 
 ### ยังพิสูจน์ไม่ได้ (รออะไรอยู่)

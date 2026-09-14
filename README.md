@@ -40,7 +40,8 @@ body ว่าง ไม่ได้แปลว่า clear สำเร็จ 
 |---|---|
 | Test case | AR full clearing + deferred output tax · customer `0001000082` · THB |
 | Document type | `DA` — Customer Document |
-| **Clearing document** | **`3000000003`** ลงวันที่ 2026-09-10 |
+| **Clearing document (เคส 2 doc)** | `3000000003` ลงวันที่ 2026-09-10 — payment จาก Fiori |
+| **Clearing document (เคส 3 doc)** | **`3000000005`** ลงวันที่ 2026-09-14 — payment จาก **JE Post API** + deferred tax transfer แยก doc |
 
 บรรทัดที่ส่งเข้า API — ทั้งหมดถูก clear ด้วยเอกสารเดียวกัน
 
@@ -58,6 +59,16 @@ body ว่าง ไม่ได้แปลว่า clear สำเร็จ 
 zero-balance clearing ที่ document splitting สร้างเอง ซึ่ง functional
 ยืนยันแล้วว่า**ถูกต้อง** (ดู [docs/01](docs/01-api-reference.md))
 
+### เคส 3 เอกสาร (2026-09-14)
+
+หลัง POC แรก functional เปลี่ยน flow ให้ payment มาจาก **JE Post API** และ deferred
+tax transfer เป็นเอกสารแยก (ระบบ generate ตอน post payment) → clearing ต้องดึงจาก
+3 เอกสาร: invoice `9400000005` · payment `3300000031` · deferred tax `7200000002`
+
+รอบแรกตกด้วย **`F5 787` inconsistent withholding tax info** — payment จาก JE Post API
+ไม่ได้ส่ง `WithholdingTaxItem` ทั้งที่ customer master มี WHT type · แก้ที่ payload
+ฝั่ง JE Post แล้วผ่าน (ไม่ต้องแก้อะไรฝั่ง clearing)
+
 ### สิ่งที่พิสูจน์ได้
 
 - ABAP Cloud เรียก inbound SOAP service ของ tenant ตัวเองได้ผ่าน
@@ -69,6 +80,9 @@ zero-balance clearing ที่ document splitting สร้างเอง ซ�
 - **ใส่ `GLItems` กับ `APARItems` ปนกันใน `JournalEntry` เดียวได้** — ได้ clearing
   document ใบเดียวคลุมทั้ง AR และ deferred output tax
   (payload ตัวอย่างของ SAP ไม่เคยแสดงเคสนี้ แต่ทดสอบแล้วใช้ได้จริง)
+- **clear ข้าม 3 เอกสารในคำขอเดียวได้** — invoice + payment + deferred tax transfer
+- payment ที่ post ผ่าน **JE Post API** clear ได้ ถ้า payload ส่ง `WithholdingTaxItem`
+  ครบตาม customer master (PK 11 / `InvoiceReference = V` ที่ API determine ให้ไม่ใช่ปัญหา)
 
 ### ข้อจำกัดที่ต้องรู้ก่อนเอาไปทำต่อ
 
