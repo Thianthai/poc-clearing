@@ -348,12 +348,13 @@ CLASS ycl_clearing IMPLEMENTATION.
 
   METHOD get_apar_items.
 
-    " Test case: AR full clearing
+    " Test case: AR full clearing (ชุดที่ 3 — payment จาก JE Post API พร้อม WHT)
     "   ทุกบรรทัดต้องเป็น open item จริง ยอดรวม (signed) = 0
     "   SpecialGLCode ต้องว่าง (API ไม่รองรับ special G/L)
+    "   บรรทัดลูกหนี้ทั้งสองต้องมี WHT info ตรงกับ customer master (F5 787)
     " SO JA30000116 > billing JA70000046
-    " invoice 9400000005/2026 item 001 : +6,418.93  (PK 01)
-    " payment 3300000017/2026 item 005 : -6,418.93  (PK 15)
+    " invoice 9400000005/2026 item 001 : +6,418.93  (PK 01, WHT XX)
+    " payment 3300000031/2026 item 003 : -6,418.93  (PK 11, WHT XX — JE Post API + WithholdingTaxItem)
     " customer 0001000082 - THB - รวมกัน = 0.00 พอดี
     " ReferenceDocumentItem ต่อจาก GLItems (1-2) จึงเริ่มที่ 3
     rt_items = VALUE #(
@@ -365,8 +366,8 @@ CLASS ycl_clearing IMPLEMENTATION.
         acctg_doc      = '9400000005'
         acctg_doc_item = '001' )
       ( ref_doc_item   = 4
-        acctg_doc      = '3300000017'
-        acctg_doc_item = '005' ) ).
+        acctg_doc      = '3300000031'
+        acctg_doc_item = '003' ) ).
 
   ENDMETHOD.
 
@@ -374,8 +375,9 @@ CLASS ycl_clearing IMPLEMENTATION.
   METHOD get_gl_items.
 
     " Deferred Output Tax — functional ยืนยันว่าต้อง clear คู่กับฝั่ง AR
-    "   invoice 9400000005/2026 item 003 : -419.93
-    "   payment 3300000017/2026 item 003 : +419.93
+    "   deferred tax transfer เป็น doc แยก (SA) ที่ระบบ generate ตอน post payment
+    "   invoice      9400000005/2026 item 003 : -419.93
+    "   deferred tax 7200000002/2026 item 003 : +419.93
     "   G/L 0021082005 - IsOpenItemManaged = 'X' - รวมกัน = 0.00 พอดี
     " GLItems ถูก emit ก่อน APARItems จึงใช้ ReferenceDocumentItem 1-2
     rt_items = VALUE #(
@@ -386,7 +388,7 @@ CLASS ycl_clearing IMPLEMENTATION.
         acctg_doc      = '9400000005'
         acctg_doc_item = '003' )
       ( ref_doc_item   = 2
-        acctg_doc      = '3300000017'
+        acctg_doc      = '7200000002'
         acctg_doc_item = '003' ) ).
 
   ENDMETHOD.
