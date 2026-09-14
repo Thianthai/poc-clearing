@@ -63,7 +63,8 @@ payload หรือมาจาก destination
 | 2026-09-10 | push ABAP object ขึ้น repo ผ่าน abapGit | ✅ ครบทุก object |
 | 2026-09-14 | **test case ชุดที่ 2** — payment `3300000026` แยก deferred tax เป็น `7200000001` · ยิง 4 บรรทัด | ❌ 202 แต่ไม่มีอะไรถูก clear |
 | 2026-09-14 | bisect รอบ 1 — AR อย่างเดียว | ❌ ตก |
-| 2026-09-14 | bisect รอบ 2 — GL อย่างเดียว | ✅ clear ได้ `3000000004` → **ต้นเหตุอยู่ AR pair** ตัวเต็ง: `3300000026`/003 เป็น **PK 11** (credit memo) ไม่ใช่ PK 15 |
+| 2026-09-14 | bisect รอบ 2 — GL อย่างเดียว | ✅ clear ได้ `3000000004` → ต้นเหตุอยู่ AR pair |
+| 2026-09-14 | assign AIF recipient (`/FINAC` → `FINAC_RECT_JECLEARING_IN`) แล้วอ่าน error | ✅ **`F5 787` inconsistent withholding tax info** — บรรทัดลูกหนี้ของ `3300000026` (post ผ่าน JE Post API) ไม่มี WHT info ทั้งที่ customer master มี → ต้องแก้ payload ฝั่ง JE Post ให้ส่ง `WithholdingTaxItem` |
 | 2026-09-10 | เทียบ `src/` กับเอกสาร แล้วตกลงชุดแก้ไข | ✅ อัปเดตบน tenant + push แล้ว — `gc_test_run` กลับเป็น `'true'`, คืน hint ใน CATCH, คืน comment ที่หายไป, คง `ty_apar_item` แบบ reference · **`src/` = docs/05 ตรงกันทุกบรรทัด** |
 
 ### ยังพิสูจน์ไม่ได้ (รออะไรอยู่)
@@ -79,7 +80,7 @@ payload หรือมาจาก destination
 | # | เรื่อง | สถานะ |
 |---|---|---|
 | 1 | ~~ยืนยัน `HTTP Version`~~ | ✅ **ปิด** — ตั้งเป็น 1.1 ตั้งแต่ตอนสร้างแล้ว (`<HTTP_VERSION>1</HTTP_VERSION>` = 1.1) |
-| 2 | AIF recipient assignment (ให้ Message Dashboard มองเห็น message) | 🔴 **กลับมา block** — มี message ตกค้าง 3 ตัวที่ต้องอ่าน error โดยเฉพาะ `POC_FA163ED0325A1FE1ABFDD4B1` (AR-only) |
+| 2 | AIF recipient assignment | ✅ **ทำแล้ว** — namespace `/FINAC` recipient `FINAC_RECT_JECLEARING_IN` · Message Dashboard เห็น message แล้ว |
 | 3 | ~~ทดสอบ partial / residual clearing~~ | ❌ **ปิด** — ไม่อยู่ใน scope ของ POC นี้ |
 
 **POC ปิดครบทุกข้อแล้ว** เหลือเฉพาะข้อ 2 ซึ่งเป็นเรื่องของการเอาไปใช้งานจริง

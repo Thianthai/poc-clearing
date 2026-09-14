@@ -70,6 +70,13 @@ prefix ตัวแปรตาม global rules (`gc_` / `lv_` / `lo_` / `ls_` /
   deferred output tax · payload ตัวอย่างของ SAP ไม่เคยแสดงเคสนี้
 - เคส AR ที่มีภาษี ต้อง clear **Deferred Output Tax** (G/L `0021082005`)
   คู่ไปด้วยเสมอ ไม่งั้น functional ตีกลับว่า clearing ไม่สมบูรณ์
+- **`F5 787` inconsistent withholding tax info** = open item ที่จะ clear มี WHT info
+  ไม่ตรงกับ customer/supplier master — เจอกับ payment ที่ post ผ่าน **JE Post API**
+  โดยไม่ส่ง `WithholdingTaxItem` ทั้งที่ master มี WHT type (ไทยมีเกือบทุกราย)
+  ไม่ใช่ปัญหาของ clearing API แก้ที่ payload ฝั่ง JE Post · payment ที่ post
+  ผ่าน Fiori ไม่เจอเพราะระบบเติม WHT จาก master ให้เอง
+  · ตอน debug อย่าเดาจาก field ที่ดึงได้จาก view (PK, InvoiceReference ฯลฯ)
+  **เปิด AIF ให้เห็น error ก่อน** ประหยัดกว่าเยอะ
 - **บรรทัดที่ `AccountingDocumentItem = 000`** ใน `I_JournalEntryItem` คือบรรทัดที่
   document splitting สร้างเอง (มีแต่ใน ACDOCA ไม่มีใน BSEG) ไม่ได้มาจาก payload
   → zero-balance clearing account ที่โผล่มาเป็น **พฤติกรรมที่ถูกต้อง**

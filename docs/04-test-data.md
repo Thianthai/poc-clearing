@@ -187,24 +187,24 @@ invoice ยังเป็น `9400000005` / 2026 ใบเดิม (reverse `3
 | bisect 1 | AR 2 บรรทัด | ❌ |
 | bisect 2 | GL 2 บรรทัด | ✅ `3000000004` |
 
-→ **AR pair ถูกปฏิเสธ**
+→ **AR pair ถูกปฏิเสธ** — เปิด AIF Message Dashboard ได้แล้ว เจอ error จริง
 
-`3300000026` post มาจาก **JE Post API** (POC อีกตัว) ซึ่ง SAP ไม่ให้ระบุ PK 15
-และ determine บรรทัดลูกหนี้เป็น **PK 11** (credit memo) เอง — นี่คือสภาพจริง
-ของ production ไม่ใช่ความผิดพลาดของ test data · clearing API ต้องรับให้ได้
+```
+F5 787  1 items have not been activated due to inconsistent withholding tax info
+```
 
-เทียบ attribute ทุกช่องกับ `3300000017`/005 (PK 15 ที่เคยผ่าน):
+`3300000026` post มาจาก **JE Post API** (POC อีกตัว) ซึ่ง determine บรรทัดลูกหนี้
+เป็น PK 11 เอง และ **payload ไม่ได้ส่ง `WithholdingTaxItem`** → บรรทัดลูกหนี้
+ไม่มี WHT info ทั้งที่ customer master มี WHT type → extended withholding tax
+ไม่ยอมให้ clear (เกิดใน F-32 / FB05 เหมือนกัน ไม่ใช่เรื่อง API)
 
-| | ผ่าน | ตก |
-|---|---|---|
-| PK | 15 | 11 |
-| **InvoiceReference** | ว่าง | **`V`** (credit memo ไม่อ้างอิง invoice) |
-| payment terms / cash discount / block / negative posting | ว่างเหมือนกัน | ว่างเหมือนกัน |
+ชุดที่ 1 ผ่านเพราะ `3300000017` post ผ่าน Fiori ซึ่งเติม WHT จาก master ให้เอง
 
-ตัดสมมติฐาน cash discount ทิ้งได้ · เหลือ `V` เป็นความต่างเดียว แต่ยืนยัน
-ไม่ได้ว่าเป็นสาเหตุ (หน้าจอ standard clear credit memo ที่มี `V` ได้ปกติ)
-· ข้อมูลจาก view หมดแล้ว **ต้องอ่าน error จาก AIF** — message
-`POC_FA163ED0325A1FE1ABFDD4B1` (AR-only)
+สิ่งที่สงสัยไว้ก่อนหน้า (PK 11, `InvoiceReference = V`) **ไม่ใช่สาเหตุ**
+
+**ทางแก้อยู่ที่ JE Post API** — ใส่ `<WithholdingTaxItem>` ใต้ `<DebtorItem>`
+ให้ตรง WHT type/code ใน customer master (amount 0 ได้ถ้าไม่หักจริง)
+แล้ว reverse `3300000026` post ใหม่
 
 `3000000004` ต้อง **reverse** ก่อนยิงรอบสุดท้าย เพราะ functional ต้องการ
 clearing doc ใบเดียวคลุมทั้ง 4 บรรทัด
