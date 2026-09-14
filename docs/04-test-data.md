@@ -187,10 +187,24 @@ invoice ยังเป็น `9400000005` / 2026 ใบเดิม (reverse `3
 | bisect 1 | AR 2 บรรทัด | ❌ |
 | bisect 2 | GL 2 บรรทัด | ✅ `3000000004` |
 
-→ **AR pair ถูกปฏิเสธ** — ต่างจากชุดที่ 1 ตรงที่ `3300000026`/003 เป็น
-**PK 11** (credit memo) ส่วน `3300000017`/005 ที่เคยผ่านเป็น PK 15
-(incoming payment) · attribute อื่นเหมือนกันหมด (tax code, OIM, special G/L,
-assignment) · เหตุผลจริงต้องอ่านจาก AIF
+→ **AR pair ถูกปฏิเสธ**
+
+`3300000026` post มาจาก **JE Post API** (POC อีกตัว) ซึ่ง SAP ไม่ให้ระบุ PK 15
+และ determine บรรทัดลูกหนี้เป็น **PK 11** (credit memo) เอง — นี่คือสภาพจริง
+ของ production ไม่ใช่ความผิดพลาดของ test data · clearing API ต้องรับให้ได้
+
+เทียบ attribute ทุกช่องกับ `3300000017`/005 (PK 15 ที่เคยผ่าน):
+
+| | ผ่าน | ตก |
+|---|---|---|
+| PK | 15 | 11 |
+| **InvoiceReference** | ว่าง | **`V`** (credit memo ไม่อ้างอิง invoice) |
+| payment terms / cash discount / block / negative posting | ว่างเหมือนกัน | ว่างเหมือนกัน |
+
+ตัดสมมติฐาน cash discount ทิ้งได้ · เหลือ `V` เป็นความต่างเดียว แต่ยืนยัน
+ไม่ได้ว่าเป็นสาเหตุ (หน้าจอ standard clear credit memo ที่มี `V` ได้ปกติ)
+· ข้อมูลจาก view หมดแล้ว **ต้องอ่าน error จาก AIF** — message
+`POC_FA163ED0325A1FE1ABFDD4B1` (AR-only)
 
 `3000000004` ต้อง **reverse** ก่อนยิงรอบสุดท้าย เพราะ functional ต้องการ
 clearing doc ใบเดียวคลุมทั้ง 4 บรรทัด
