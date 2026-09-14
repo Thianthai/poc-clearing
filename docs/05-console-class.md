@@ -4,9 +4,10 @@
 > [`src/ycl_clearing.clas.abap`](../src/ycl_clearing.clas.abap) ที่ abapGit
 > serialize ขึ้นมาจาก tenant
 >
-> ⏳ 2026-09-14 — แก้ `get_apar_items( )` / `get_gl_items( )` เป็น test data
-> ชุดที่ 2 (payment `3300000026` + deferred tax `7200000001`)
-> **รออัปเดตบน tenant แล้ว push ทับ** — ระหว่างนี้ `src/` ยังเป็นชุดที่ 1
+> ⏳ 2026-09-14 — test data ชุดที่ 2 (payment `3300000026` + deferred tax
+> `7200000001`) · บน tenant ตอนนี้อยู่ในสถานะ **bisect** (`get_apar_items( )`
+> comment ไว้ เหลือแค่ GL) · snapshot นี้เป็นเวอร์ชันเต็ม 4 บรรทัด
+> `src/` ยังเป็นชุดที่ 1 — รอสรุปฝั่ง AR แล้วค่อย push ทับ
 
 > **partial / residual clearing — ไม่อยู่ใน scope ของ POC นี้**
 > field `partial_amount` / `cash_discount` / `other_deduction` /
